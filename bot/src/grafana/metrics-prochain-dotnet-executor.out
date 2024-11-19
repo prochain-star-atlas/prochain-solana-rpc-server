@@ -1,0 +1,508 @@
+# HELP dotnet_collection_count_total GC collection count
+# TYPE dotnet_collection_count_total counter
+dotnet_collection_count_total{generation="0"} 3
+dotnet_collection_count_total{generation="1"} 1
+dotnet_collection_count_total{generation="2"} 0
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1719428050.0626085
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 23.75
+# HELP process_virtual_memory_bytes Virtual memory size in bytes.
+# TYPE process_virtual_memory_bytes gauge
+process_virtual_memory_bytes 1104574214144
+# HELP process_working_set_bytes Process working set
+# TYPE process_working_set_bytes gauge
+process_working_set_bytes 429613056
+# HELP process_private_memory_bytes Process private memory size
+# TYPE process_private_memory_bytes gauge
+process_private_memory_bytes 877785088
+# HELP process_open_handles Number of open handles
+# TYPE process_open_handles gauge
+process_open_handles 477
+# HELP process_num_threads Total number of threads
+# TYPE process_num_threads gauge
+process_num_threads 156
+# HELP dotnet_total_memory_bytes Total known allocated memory
+# TYPE dotnet_total_memory_bytes gauge
+dotnet_total_memory_bytes 42789624
+# HELP prometheus_net_metric_families Number of metric families currently registered.
+# TYPE prometheus_net_metric_families gauge
+prometheus_net_metric_families{metric_type="counter"} 18
+prometheus_net_metric_families{metric_type="gauge"} 81
+prometheus_net_metric_families{metric_type="summary"} 0
+prometheus_net_metric_families{metric_type="histogram"} 7
+# HELP prometheus_net_metric_instances Number of metric instances currently registered across all metric families.
+# TYPE prometheus_net_metric_instances gauge
+prometheus_net_metric_instances{metric_type="counter"} 20
+prometheus_net_metric_instances{metric_type="gauge"} 91
+prometheus_net_metric_instances{metric_type="summary"} 0
+prometheus_net_metric_instances{metric_type="histogram"} 7
+# HELP prometheus_net_metric_timeseries Number of metric timeseries currently generated from all metric instances.
+# TYPE prometheus_net_metric_timeseries gauge
+prometheus_net_metric_timeseries{metric_type="counter"} 20
+prometheus_net_metric_timeseries{metric_type="gauge"} 91
+prometheus_net_metric_timeseries{metric_type="summary"} 0
+prometheus_net_metric_timeseries{metric_type="histogram"} 185
+# HELP prometheus_net_exemplars_recorded_total Number of exemplars that were accepted into in-memory storage in the prometheus-net SDK.
+# TYPE prometheus_net_exemplars_recorded_total counter
+prometheus_net_exemplars_recorded_total 84
+# HELP prometheus_net_eventcounteradapter_sources_connected_total Number of event sources that are currently connected to the adapter.
+# TYPE prometheus_net_eventcounteradapter_sources_connected_total gauge
+prometheus_net_eventcounteradapter_sources_connected_total 7
+# HELP prometheus_net_meteradapter_instruments_connected Number of instruments that are currently connected to the adapter.
+# TYPE prometheus_net_meteradapter_instruments_connected gauge
+prometheus_net_meteradapter_instruments_connected 31
+# HELP microsoft_aspnetcore_hosting_http_server_active_requests ({request}) Number of active HTTP server requests. (UpDownCounter`1)
+# TYPE microsoft_aspnetcore_hosting_http_server_active_requests gauge
+microsoft_aspnetcore_hosting_http_server_active_requests{http_request_method="GET",url_scheme="http"} 1
+# HELP microsoft_aspnetcore_hosting_http_server_request_duration (s) Duration of HTTP server requests. (Histogram`1)
+# TYPE microsoft_aspnetcore_hosting_http_server_request_duration histogram
+microsoft_aspnetcore_hosting_http_server_request_duration_sum{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http"} 145.69036110000002
+microsoft_aspnetcore_hosting_http_server_request_duration_count{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http"} 127
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="0.01"} 108
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="0.02"} 125
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="0.04"} 126
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="0.08"} 126
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="0.16"} 126
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="0.32"} 126
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="0.64"} 126
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="1.28"} 126
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="2.56"} 126
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="5.12"} 126
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="10.24"} 126
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="20.48"} 126
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="40.96"} 126
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="81.92"} 126
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="163.84"} 127
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="327.68"} 127
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="655.36"} 127
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="1310.72"} 127
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="2621.44"} 127
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="5242.88"} 127
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="10485.76"} 127
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="20971.52"} 127
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="41943.04"} 127
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="83886.08"} 127
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="167772.16"} 127
+microsoft_aspnetcore_hosting_http_server_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",url_scheme="http",le="+Inf"} 127
+# HELP system_runtime_cpu_usage (%) CPU Usage
+# TYPE system_runtime_cpu_usage gauge
+system_runtime_cpu_usage 0.000420031194498725
+# HELP system_runtime_working_set (MB) Working Set
+# TYPE system_runtime_working_set gauge
+system_runtime_working_set 429.613056
+# HELP system_runtime_gc_heap_size (MB) GC Heap Size
+# TYPE system_runtime_gc_heap_size gauge
+system_runtime_gc_heap_size 42.345544
+# HELP system_runtime_gen_0_gc_count_total Gen 0 GC Count
+# TYPE system_runtime_gen_0_gc_count_total counter
+system_runtime_gen_0_gc_count_total 3
+# HELP system_runtime_gen_1_gc_count_total Gen 1 GC Count
+# TYPE system_runtime_gen_1_gc_count_total counter
+system_runtime_gen_1_gc_count_total 1
+# HELP system_runtime_gen_2_gc_count_total Gen 2 GC Count
+# TYPE system_runtime_gen_2_gc_count_total counter
+system_runtime_gen_2_gc_count_total 0
+# HELP system_runtime_gen_0_gc_budget (MB) Gen 0 GC Budget
+# TYPE system_runtime_gen_0_gc_budget gauge
+system_runtime_gen_0_gc_budget 10737
+# HELP system_runtime_threadpool_thread_count ThreadPool Thread Count
+# TYPE system_runtime_threadpool_thread_count gauge
+system_runtime_threadpool_thread_count 3
+# HELP system_runtime_monitor_lock_contention_count_total Monitor Lock Contention Count
+# TYPE system_runtime_monitor_lock_contention_count_total counter
+system_runtime_monitor_lock_contention_count_total 12
+# HELP system_runtime_threadpool_queue_length ThreadPool Queue Length
+# TYPE system_runtime_threadpool_queue_length gauge
+system_runtime_threadpool_queue_length 0
+# HELP system_runtime_threadpool_completed_items_count_total ThreadPool Completed Work Item Count
+# TYPE system_runtime_threadpool_completed_items_count_total counter
+system_runtime_threadpool_completed_items_count_total 3095
+# HELP system_runtime_alloc_total (B) Allocation Rate
+# TYPE system_runtime_alloc_total counter
+system_runtime_alloc_total 88742048
+# HELP system_runtime_active_timer_count Number of Active Timers
+# TYPE system_runtime_active_timer_count gauge
+system_runtime_active_timer_count 17
+# HELP system_runtime_gc_fragmentation (%) GC Fragmentation
+# TYPE system_runtime_gc_fragmentation gauge
+system_runtime_gc_fragmentation 4.10658086448952
+# HELP system_runtime_gc_committed (MB) GC Committed Bytes
+# TYPE system_runtime_gc_committed gauge
+system_runtime_gc_committed 231.555072
+# HELP system_runtime_exception_count_total Exception Count
+# TYPE system_runtime_exception_count_total counter
+system_runtime_exception_count_total 118
+# HELP system_runtime_time_in_gc (%) % Time in GC since last GC
+# TYPE system_runtime_time_in_gc gauge
+system_runtime_time_in_gc 0
+# HELP system_runtime_total_pause_time_by_gc_total (ms) Time paused by GC
+# TYPE system_runtime_total_pause_time_by_gc_total counter
+system_runtime_total_pause_time_by_gc_total 150.136
+# HELP system_runtime_gen_0_size (B) Gen 0 Size
+# TYPE system_runtime_gen_0_size gauge
+system_runtime_gen_0_size 1006456
+# HELP system_runtime_gen_1_size (B) Gen 1 Size
+# TYPE system_runtime_gen_1_size gauge
+system_runtime_gen_1_size 1668496
+# HELP system_runtime_gen_2_size (B) Gen 2 Size
+# TYPE system_runtime_gen_2_size gauge
+system_runtime_gen_2_size 11164912
+# HELP system_runtime_loh_size (B) LOH Size
+# TYPE system_runtime_loh_size gauge
+system_runtime_loh_size 10428552
+# HELP system_runtime_poh_size (B) POH (Pinned Object Heap) Size
+# TYPE system_runtime_poh_size gauge
+system_runtime_poh_size 609896
+# HELP system_runtime_assembly_count Number of Assemblies Loaded
+# TYPE system_runtime_assembly_count gauge
+system_runtime_assembly_count 223
+# HELP system_runtime_il_bytes_jitted (B) IL Bytes Jitted
+# TYPE system_runtime_il_bytes_jitted gauge
+system_runtime_il_bytes_jitted 2062465
+# HELP system_runtime_methods_jitted_count Number of Methods Jitted
+# TYPE system_runtime_methods_jitted_count gauge
+system_runtime_methods_jitted_count 26667
+# HELP system_runtime_time_in_jit_total (ms) Time spent in JIT
+# TYPE system_runtime_time_in_jit_total counter
+system_runtime_time_in_jit_total 4933.2123
+# HELP system_net_http_requests_started Requests Started
+# TYPE system_net_http_requests_started gauge
+system_net_http_requests_started 149
+# HELP system_net_http_requests_started_total Requests Started Rate
+# TYPE system_net_http_requests_started_total counter
+system_net_http_requests_started_total 149
+# HELP system_net_http_requests_failed Requests Failed
+# TYPE system_net_http_requests_failed gauge
+system_net_http_requests_failed 5
+# HELP system_net_http_requests_failed_total Requests Failed Rate
+# TYPE system_net_http_requests_failed_total counter
+system_net_http_requests_failed_total 5
+# HELP system_net_http_current_requests Current Requests
+# TYPE system_net_http_current_requests gauge
+system_net_http_current_requests 1
+# HELP system_net_http_http11_connections_current_total Current Http 1.1 Connections
+# TYPE system_net_http_http11_connections_current_total gauge
+system_net_http_http11_connections_current_total 0
+# HELP system_net_http_http20_connections_current_total Current Http 2.0 Connections
+# TYPE system_net_http_http20_connections_current_total gauge
+system_net_http_http20_connections_current_total 0
+# HELP system_net_http_http30_connections_current_total Current Http 3.0 Connections
+# TYPE system_net_http_http30_connections_current_total gauge
+system_net_http_http30_connections_current_total 0
+# HELP system_net_http_http11_requests_queue_duration (ms) HTTP 1.1 Requests Queue Duration
+# TYPE system_net_http_http11_requests_queue_duration gauge
+system_net_http_http11_requests_queue_duration 0
+# HELP system_net_http_http20_requests_queue_duration (ms) HTTP 2.0 Requests Queue Duration
+# TYPE system_net_http_http20_requests_queue_duration gauge
+system_net_http_http20_requests_queue_duration 0
+# HELP system_net_http_http30_requests_queue_duration (ms) HTTP 3.0 Requests Queue Duration
+# TYPE system_net_http_http30_requests_queue_duration gauge
+system_net_http_http30_requests_queue_duration 0
+# HELP system_net_sockets_current_outgoing_connect_attempts Current Outgoing Connect Attempts
+# TYPE system_net_sockets_current_outgoing_connect_attempts gauge
+system_net_sockets_current_outgoing_connect_attempts 0
+# HELP system_net_sockets_outgoing_connections_established Outgoing Connections Established
+# TYPE system_net_sockets_outgoing_connections_established gauge
+system_net_sockets_outgoing_connections_established 32
+# HELP system_net_sockets_incoming_connections_established Incoming Connections Established
+# TYPE system_net_sockets_incoming_connections_established gauge
+system_net_sockets_incoming_connections_established 17
+# HELP system_net_sockets_bytes_received Bytes Received
+# TYPE system_net_sockets_bytes_received gauge
+system_net_sockets_bytes_received 400224
+# HELP system_net_sockets_bytes_sent Bytes Sent
+# TYPE system_net_sockets_bytes_sent gauge
+system_net_sockets_bytes_sent 11044812
+# HELP system_net_sockets_datagrams_received Datagrams Received
+# TYPE system_net_sockets_datagrams_received gauge
+system_net_sockets_datagrams_received 0
+# HELP system_net_sockets_datagrams_sent Datagrams Sent
+# TYPE system_net_sockets_datagrams_sent gauge
+system_net_sockets_datagrams_sent 0
+# HELP system_net_nameresolution_dns_lookups_requested DNS Lookups Requested
+# TYPE system_net_nameresolution_dns_lookups_requested gauge
+system_net_nameresolution_dns_lookups_requested 26
+# HELP system_net_nameresolution_current_dns_lookups Current DNS Lookups
+# TYPE system_net_nameresolution_current_dns_lookups gauge
+system_net_nameresolution_current_dns_lookups 0
+# HELP system_net_nameresolution_dns_lookups_duration (ms) Average DNS Lookup Duration
+# TYPE system_net_nameresolution_dns_lookups_duration gauge
+system_net_nameresolution_dns_lookups_duration 0
+# HELP system_net_security_tls_handshake_total TLS handshakes completed
+# TYPE system_net_security_tls_handshake_total counter
+system_net_security_tls_handshake_total 21
+# HELP system_net_security_total_tls_handshakes Total TLS handshakes completed
+# TYPE system_net_security_total_tls_handshakes gauge
+system_net_security_total_tls_handshakes 21
+# HELP system_net_security_current_tls_handshakes Current TLS handshakes
+# TYPE system_net_security_current_tls_handshakes gauge
+system_net_security_current_tls_handshakes 0
+# HELP system_net_security_failed_tls_handshakes Total TLS handshakes failed
+# TYPE system_net_security_failed_tls_handshakes gauge
+system_net_security_failed_tls_handshakes 0
+# HELP system_net_security_all_tls_sessions_open All TLS Sessions Active
+# TYPE system_net_security_all_tls_sessions_open gauge
+system_net_security_all_tls_sessions_open 0
+# HELP system_net_security_tls10_sessions_open TLS 1.0 Sessions Active
+# TYPE system_net_security_tls10_sessions_open gauge
+system_net_security_tls10_sessions_open 0
+# HELP system_net_security_tls11_sessions_open TLS 1.1 Sessions Active
+# TYPE system_net_security_tls11_sessions_open gauge
+system_net_security_tls11_sessions_open 0
+# HELP system_net_security_tls12_sessions_open TLS 1.2 Sessions Active
+# TYPE system_net_security_tls12_sessions_open gauge
+system_net_security_tls12_sessions_open 0
+# HELP system_net_security_tls13_sessions_open TLS 1.3 Sessions Active
+# TYPE system_net_security_tls13_sessions_open gauge
+system_net_security_tls13_sessions_open 0
+# HELP system_net_security_all_tls_handshake_duration (ms) TLS Handshake Duration
+# TYPE system_net_security_all_tls_handshake_duration gauge
+system_net_security_all_tls_handshake_duration 0
+# HELP system_net_security_tls10_handshake_duration (ms) TLS 1.0 Handshake Duration
+# TYPE system_net_security_tls10_handshake_duration gauge
+system_net_security_tls10_handshake_duration 0
+# HELP system_net_security_tls11_handshake_duration (ms) TLS 1.1 Handshake Duration
+# TYPE system_net_security_tls11_handshake_duration gauge
+system_net_security_tls11_handshake_duration 0
+# HELP system_net_security_tls12_handshake_duration (ms) TLS 1.2 Handshake Duration
+# TYPE system_net_security_tls12_handshake_duration gauge
+system_net_security_tls12_handshake_duration 0
+# HELP system_net_security_tls13_handshake_duration (ms) TLS 1.3 Handshake Duration
+# TYPE system_net_security_tls13_handshake_duration gauge
+system_net_security_tls13_handshake_duration 0
+# HELP microsoft_aspnetcore_hosting_requests_per_second_total Request Rate
+# TYPE microsoft_aspnetcore_hosting_requests_per_second_total counter
+microsoft_aspnetcore_hosting_requests_per_second_total 127
+# HELP microsoft_aspnetcore_hosting_total_requests Total Requests
+# TYPE microsoft_aspnetcore_hosting_total_requests gauge
+microsoft_aspnetcore_hosting_total_requests 127
+# HELP microsoft_aspnetcore_hosting_current_requests Current Requests
+# TYPE microsoft_aspnetcore_hosting_current_requests gauge
+microsoft_aspnetcore_hosting_current_requests 0
+# HELP microsoft_aspnetcore_hosting_failed_requests Failed Requests
+# TYPE microsoft_aspnetcore_hosting_failed_requests gauge
+microsoft_aspnetcore_hosting_failed_requests 0
+# HELP microsoft_aspnetcore_server_kestrel_connections_per_second_total Connection Rate
+# TYPE microsoft_aspnetcore_server_kestrel_connections_per_second_total counter
+microsoft_aspnetcore_server_kestrel_connections_per_second_total 15
+# HELP microsoft_aspnetcore_server_kestrel_total_connections Total Connections
+# TYPE microsoft_aspnetcore_server_kestrel_total_connections gauge
+microsoft_aspnetcore_server_kestrel_total_connections 17
+# HELP microsoft_aspnetcore_server_kestrel_tls_handshakes_per_second_total TLS Handshake Rate
+# TYPE microsoft_aspnetcore_server_kestrel_tls_handshakes_per_second_total counter
+microsoft_aspnetcore_server_kestrel_tls_handshakes_per_second_total 0
+# HELP microsoft_aspnetcore_server_kestrel_total_tls_handshakes Total TLS Handshakes
+# TYPE microsoft_aspnetcore_server_kestrel_total_tls_handshakes gauge
+microsoft_aspnetcore_server_kestrel_total_tls_handshakes 0
+# HELP microsoft_aspnetcore_server_kestrel_current_tls_handshakes Current TLS Handshakes
+# TYPE microsoft_aspnetcore_server_kestrel_current_tls_handshakes gauge
+microsoft_aspnetcore_server_kestrel_current_tls_handshakes 0
+# HELP microsoft_aspnetcore_server_kestrel_failed_tls_handshakes Failed TLS Handshakes
+# TYPE microsoft_aspnetcore_server_kestrel_failed_tls_handshakes gauge
+microsoft_aspnetcore_server_kestrel_failed_tls_handshakes 0
+# HELP microsoft_aspnetcore_server_kestrel_current_connections Current Connections
+# TYPE microsoft_aspnetcore_server_kestrel_current_connections gauge
+microsoft_aspnetcore_server_kestrel_current_connections 2
+# HELP microsoft_aspnetcore_server_kestrel_connection_queue_length Connection Queue Length
+# TYPE microsoft_aspnetcore_server_kestrel_connection_queue_length gauge
+microsoft_aspnetcore_server_kestrel_connection_queue_length 0
+# HELP microsoft_aspnetcore_server_kestrel_request_queue_length Request Queue Length
+# TYPE microsoft_aspnetcore_server_kestrel_request_queue_length gauge
+microsoft_aspnetcore_server_kestrel_request_queue_length 0
+# HELP microsoft_aspnetcore_server_kestrel_current_upgraded_requests Current Upgraded Requests (WebSockets)
+# TYPE microsoft_aspnetcore_server_kestrel_current_upgraded_requests gauge
+microsoft_aspnetcore_server_kestrel_current_upgraded_requests 0
+# HELP system_net_http_http_client_active_requests ({request}) Number of outbound HTTP requests that are currently active on the client. (UpDownCounter`1)
+# TYPE system_net_http_http_client_active_requests gauge
+system_net_http_http_client_active_requests{http_request_method="GET",server_address="api.bscscan.com",url_scheme="https"} 0
+system_net_http_http_client_active_requests{http_request_method="POST",server_address="api.telegram.org",url_scheme="https"} 1
+system_net_http_http_client_active_requests{http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http"} 0
+# HELP system_net_http_http_client_request_duration (s) The duration of outbound HTTP requests. (Histogram`1)
+# TYPE system_net_http_http_client_request_duration histogram
+system_net_http_http_client_request_duration_sum{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https"} 21.894373400000003
+system_net_http_http_client_request_duration_count{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="0.01"} 0
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="0.02"} 0
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="0.04"} 0
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="0.08"} 0
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="0.16"} 73
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="0.32"} 74
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="0.64"} 75
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="1.28"} 75
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="2.56"} 75
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="5.12"} 76
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="10.24"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="20.48"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="40.96"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="81.92"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="163.84"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="327.68"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="655.36"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="1310.72"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="2621.44"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="5242.88"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="10485.76"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="20971.52"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="41943.04"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="83886.08"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="167772.16"} 77
+system_net_http_http_client_request_duration_bucket{http_request_method="GET",http_response_status_code="200",network_protocol_version="1.1",server_address="api.bscscan.com",url_scheme="https",le="+Inf"} 77
+system_net_http_http_client_request_duration_sum{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https"} 2251.1845638
+system_net_http_http_client_request_duration_count{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="0.01"} 0
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="0.02"} 0
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="0.04"} 0
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="0.08"} 0
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="0.16"} 1
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="0.32"} 2
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="0.64"} 2
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="1.28"} 2
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="2.56"} 2
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="5.12"} 2
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="10.24"} 2
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="20.48"} 2
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="40.96"} 2
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="81.92"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="163.84"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="327.68"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="655.36"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="1310.72"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="2621.44"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="5242.88"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="10485.76"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="20971.52"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="41943.04"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="83886.08"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="167772.16"} 47
+system_net_http_http_client_request_duration_bucket{http_request_method="POST",http_response_status_code="200",network_protocol_version="1.1",server_address="api.telegram.org",url_scheme="https",le="+Inf"} 47
+system_net_http_http_client_request_duration_sum{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http"} 0.0022467
+system_net_http_http_client_request_duration_count{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.01"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.02"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.04"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.08"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.16"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.32"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.64"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="1.28"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="2.56"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="5.12"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="10.24"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="20.48"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="40.96"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="81.92"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="163.84"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="327.68"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="655.36"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="1310.72"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="2621.44"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="5242.88"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="10485.76"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="20971.52"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="41943.04"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="83886.08"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="167772.16"} 1
+system_net_http_http_client_request_duration_bucket{error_type="name_resolution_error",http_request_method="POST",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="+Inf"} 1
+# HELP microsoft_aspnetcore_server_kestrel_kestrel_queued_connections ({connection}) Number of connections that are currently queued and are waiting to start. (UpDownCounter`1)
+# TYPE microsoft_aspnetcore_server_kestrel_kestrel_queued_connections gauge
+microsoft_aspnetcore_server_kestrel_kestrel_queued_connections{network_transport="tcp",network_type="ipv6",server_address="::ffff:192.168.100.97",server_port="31123"} 0
+# HELP microsoft_aspnetcore_server_kestrel_kestrel_active_connections ({connection}) Number of connections that are currently active on the server. (UpDownCounter`1)
+# TYPE microsoft_aspnetcore_server_kestrel_kestrel_active_connections gauge
+microsoft_aspnetcore_server_kestrel_kestrel_active_connections{network_transport="tcp",network_type="ipv6",server_address="::ffff:192.168.100.97",server_port="31123"} 1
+# HELP system_net_nameresolution_dns_lookup_duration (s) Measures the time taken to perform a DNS lookup. (Histogram`1)
+# TYPE system_net_nameresolution_dns_lookup_duration histogram
+system_net_nameresolution_dns_lookup_duration_sum{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again"} 0.0011092
+system_net_nameresolution_dns_lookup_duration_count{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="0.01"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="0.02"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="0.04"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="0.08"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="0.16"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="0.32"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="0.64"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="1.28"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="2.56"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="5.12"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="10.24"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="20.48"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="40.96"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="81.92"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="163.84"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="327.68"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="655.36"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="1310.72"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="2621.44"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="5242.88"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="10485.76"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="20971.52"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="41943.04"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="83886.08"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="167772.16"} 1
+system_net_nameresolution_dns_lookup_duration_bucket{dns_question_name="ingestion.seqbscbot.pesh.local",error_type="try_again",le="+Inf"} 1
+# HELP system_net_http_http_client_request_time_in_queue (s) The amount of time requests spent on a queue waiting for an available connection. (Histogram`1)
+# TYPE system_net_http_http_client_request_time_in_queue histogram
+system_net_http_http_client_request_time_in_queue_sum{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http"} 0.0020077
+system_net_http_http_client_request_time_in_queue_count{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.01"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.02"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.04"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.08"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.16"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.32"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="0.64"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="1.28"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="2.56"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="5.12"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="10.24"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="20.48"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="40.96"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="81.92"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="163.84"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="327.68"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="655.36"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="1310.72"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="2621.44"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="5242.88"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="10485.76"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="20971.52"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="41943.04"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="83886.08"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="167772.16"} 1
+system_net_http_http_client_request_time_in_queue_bucket{http_request_method="POST",network_protocol_version="1.1",server_address="ingestion.seqbscbot.pesh.local",url_scheme="http",le="+Inf"} 1
+# HELP microsoft_aspnetcore_server_kestrel_kestrel_connection_duration (s) The duration of connections on the server. (Histogram`1)
+# TYPE microsoft_aspnetcore_server_kestrel_kestrel_connection_duration histogram
+# HELP system_net_http_http_client_open_connections ({connection}) Number of outbound HTTP connections that are currently active or idle on the client. (UpDownCounter`1)
+# TYPE system_net_http_http_client_open_connections gauge
+# HELP system_net_http_http_client_connection_duration (s) The duration of successfully established outbound HTTP connections. (Histogram`1)
+# TYPE system_net_http_http_client_connection_duration histogram
+# HELP prochain_arbitrageexecution_dotnet_win_usdt_histo Histogram of received order values (in USD).
+# TYPE prochain_arbitrageexecution_dotnet_win_usdt_histo histogram
+prochain_arbitrageexecution_dotnet_win_usdt_histo_sum -9.65
+prochain_arbitrageexecution_dotnet_win_usdt_histo_count 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="0.005"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="0.01"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="0.025"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="0.05"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="0.075"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="0.1"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="0.25"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="0.5"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="0.75"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="1"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="2.5"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="5"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="7.5"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="10"} 1
+prochain_arbitrageexecution_dotnet_win_usdt_histo_bucket{le="+Inf"} 1
+# HELP prochain_arbitrageexecution_dotnet_win_usdt_gauge Histogram of total usd
+# TYPE prochain_arbitrageexecution_dotnet_win_usdt_gauge gauge
+prochain_arbitrageexecution_dotnet_win_usdt_gauge -9.65
+# HELP prochain_arbitrageexecution_dotnet_positive_trade_gauge Histogram of total usd
+# TYPE prochain_arbitrageexecution_dotnet_positive_trade_gauge gauge
+prochain_arbitrageexecution_dotnet_positive_trade_gauge 0
+# HELP prochain_arbitrageexecution_dotnet_negative_trade_gauge Histogram of total usd
+# TYPE prochain_arbitrageexecution_dotnet_negative_trade_gauge gauge
+prochain_arbitrageexecution_dotnet_negative_trade_gauge 1

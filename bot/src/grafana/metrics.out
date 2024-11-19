@@ -1,0 +1,137 @@
+# TYPE prochain_executor_gateio_trx_triggered_counter counter
+prochain_executor_gateio_trx_triggered_counter 10
+
+# TYPE prochain_executor_gateio_trx_pending_possible_opportunity_event_counter counter
+prochain_executor_gateio_trx_pending_possible_opportunity_event_counter 2967
+
+# TYPE prochain_executor_gateio_trx_long_possible_opportunity_event_counter counter
+prochain_executor_gateio_trx_long_possible_opportunity_event_counter 1403
+
+# TYPE prochain_executor_gateio_trx_triggered_pending_counter counter
+prochain_executor_gateio_trx_triggered_pending_counter 9
+
+# TYPE prochain_executor_gateio_trx_triggered_block_counter counter
+prochain_executor_gateio_trx_triggered_block_counter 1
+
+# TYPE prochain_executor_gateio_trx_long_possible_opportunity_gas gauge
+prochain_executor_gateio_trx_long_possible_opportunity_gas 0
+
+# TYPE prochain_executor_gateio_trx_long_possible_opportunity_gas_price gauge
+prochain_executor_gateio_trx_long_possible_opportunity_gas_price 0
+
+# TYPE prochain_executor_gateio_trx_pending_possible_opportunity_gas_price gauge
+prochain_executor_gateio_trx_pending_possible_opportunity_gas_price 1000000000
+
+# TYPE prochain_executor_gateio_trx_pending_possible_opportunity_gas gauge
+prochain_executor_gateio_trx_pending_possible_opportunity_gas 273252
+
+# TYPE prochain_executor_gateio_trx_pending_possible_opportunity_simulation_minamount summary
+prochain_executor_gateio_trx_pending_possible_opportunity_simulation_minamount{pending_simu="ms",quantile="0"} 5
+prochain_executor_gateio_trx_pending_possible_opportunity_simulation_minamount{pending_simu="ms",quantile="0.5"} 5.999643201074881
+prochain_executor_gateio_trx_pending_possible_opportunity_simulation_minamount{pending_simu="ms",quantile="0.9"} 6.999928967377545
+prochain_executor_gateio_trx_pending_possible_opportunity_simulation_minamount{pending_simu="ms",quantile="0.95"} 8.000467695685316
+prochain_executor_gateio_trx_pending_possible_opportunity_simulation_minamount{pending_simu="ms",quantile="0.99"} 8.000467695685316
+prochain_executor_gateio_trx_pending_possible_opportunity_simulation_minamount{pending_simu="ms",quantile="0.999"} 8.000467695685316
+prochain_executor_gateio_trx_pending_possible_opportunity_simulation_minamount{pending_simu="ms",quantile="1"} 8
+prochain_executor_gateio_trx_pending_possible_opportunity_simulation_minamount_sum{pending_simu="ms"} 28582
+prochain_executor_gateio_trx_pending_possible_opportunity_simulation_minamount_count{pending_simu="ms"} 4035
+
+# TYPE prochain_executor_gateio_trx_block_possible_opportunity_simulation_minamount summary
+prochain_executor_gateio_trx_block_possible_opportunity_simulation_minamount{block_simu="ms",quantile="0"} 3
+prochain_executor_gateio_trx_block_possible_opportunity_simulation_minamount{block_simu="ms",quantile="0.5"} 5.000310449291975
+prochain_executor_gateio_trx_block_possible_opportunity_simulation_minamount{block_simu="ms",quantile="0.9"} 8.000467695685316
+prochain_executor_gateio_trx_block_possible_opportunity_simulation_minamount{block_simu="ms",quantile="0.95"} 9.000678850493848
+prochain_executor_gateio_trx_block_possible_opportunity_simulation_minamount{block_simu="ms",quantile="0.99"} 9.000678850493848
+prochain_executor_gateio_trx_block_possible_opportunity_simulation_minamount{block_simu="ms",quantile="0.999"} 9.000678850493848
+prochain_executor_gateio_trx_block_possible_opportunity_simulation_minamount{block_simu="ms",quantile="1"} 10
+prochain_executor_gateio_trx_block_possible_opportunity_simulation_minamount_sum{block_simu="ms"} 8581
+prochain_executor_gateio_trx_block_possible_opportunity_simulation_minamount_count{block_simu="ms"} 1358
+
+# TYPE prochain_executor_gateio_trx_triggered_event_gas_price_init_usdt summary
+prochain_executor_gateio_trx_triggered_event_gas_price_init_usdt{executed_gas_price_init="WEI",quantile="0"} 0
+prochain_executor_gateio_trx_triggered_event_gas_price_init_usdt{executed_gas_price_init="WEI",quantile="0.5"} 0
+prochain_executor_gateio_trx_triggered_event_gas_price_init_usdt{executed_gas_price_init="WEI",quantile="0.9"} 0
+prochain_executor_gateio_trx_triggered_event_gas_price_init_usdt{executed_gas_price_init="WEI",quantile="0.95"} 0
+prochain_executor_gateio_trx_triggered_event_gas_price_init_usdt{executed_gas_price_init="WEI",quantile="0.99"} 0
+prochain_executor_gateio_trx_triggered_event_gas_price_init_usdt{executed_gas_price_init="WEI",quantile="0.999"} 0
+prochain_executor_gateio_trx_triggered_event_gas_price_init_usdt{executed_gas_price_init="WEI",quantile="1"} 0
+prochain_executor_gateio_trx_triggered_event_gas_price_init_usdt_sum{executed_gas_price_init="WEI"} 9245718518
+prochain_executor_gateio_trx_triggered_event_gas_price_init_usdt_count{executed_gas_price_init="WEI"} 10
+
+# TYPE prochain_executor_gateio_trx_long_possible_opportunity_event_percent summary
+prochain_executor_gateio_trx_long_possible_opportunity_event_percent{opportunity="percent",quantile="0"} 0.6640266666666667
+prochain_executor_gateio_trx_long_possible_opportunity_event_percent{opportunity="percent",quantile="0.5"} 2.7519231605632544
+prochain_executor_gateio_trx_long_possible_opportunity_event_percent{opportunity="percent",quantile="0.9"} 4.853499544234642
+prochain_executor_gateio_trx_long_possible_opportunity_event_percent{opportunity="percent",quantile="0.95"} 4.978357415334171
+prochain_executor_gateio_trx_long_possible_opportunity_event_percent{opportunity="percent",quantile="0.99"} 4.978357415334171
+prochain_executor_gateio_trx_long_possible_opportunity_event_percent{opportunity="percent",quantile="0.999"} 4.978357415334171
+prochain_executor_gateio_trx_long_possible_opportunity_event_percent{opportunity="percent",quantile="1"} 5.30104
+prochain_executor_gateio_trx_long_possible_opportunity_event_percent_sum{opportunity="percent"} 3972.474154036998
+prochain_executor_gateio_trx_long_possible_opportunity_event_percent_count{opportunity="percent"} 1403
+
+# TYPE prochain_executor_rust_bot_start summary
+prochain_executor_rust_bot_start{bot_start="Time",quantile="0"} 0
+prochain_executor_rust_bot_start{bot_start="Time",quantile="0.5"} 0
+prochain_executor_rust_bot_start{bot_start="Time",quantile="0.9"} 0
+prochain_executor_rust_bot_start{bot_start="Time",quantile="0.95"} 0
+prochain_executor_rust_bot_start{bot_start="Time",quantile="0.99"} 0
+prochain_executor_rust_bot_start{bot_start="Time",quantile="0.999"} 0
+prochain_executor_rust_bot_start{bot_start="Time",quantile="1"} 0
+prochain_executor_rust_bot_start_sum{bot_start="Time"} 1719415719
+prochain_executor_rust_bot_start_count{bot_start="Time"} 1
+
+# TYPE prochain_executor_gateio_trx_long_possible_opportunity_event_win_usdt summary
+prochain_executor_gateio_trx_long_possible_opportunity_event_win_usdt{win="usdt",quantile="0"} 1.99208
+prochain_executor_gateio_trx_long_possible_opportunity_event_win_usdt{win="usdt",quantile="0.5"} 8.255668060134226
+prochain_executor_gateio_trx_long_possible_opportunity_event_win_usdt{win="usdt",quantile="0.9"} 14.560319757987997
+prochain_executor_gateio_trx_long_possible_opportunity_event_win_usdt{win="usdt",quantile="0.95"} 14.93488876967573
+prochain_executor_gateio_trx_long_possible_opportunity_event_win_usdt{win="usdt",quantile="0.99"} 14.93488876967573
+prochain_executor_gateio_trx_long_possible_opportunity_event_win_usdt{win="usdt",quantile="0.999"} 14.93488876967573
+prochain_executor_gateio_trx_long_possible_opportunity_event_win_usdt{win="usdt",quantile="1"} 15.90312
+prochain_executor_gateio_trx_long_possible_opportunity_event_win_usdt_sum{win="usdt"} 11917.422462110922
+prochain_executor_gateio_trx_long_possible_opportunity_event_win_usdt_count{win="usdt"} 1403
+
+# TYPE prochain_executor_gateio_trx_triggered_event_gas_init_usdt summary
+prochain_executor_gateio_trx_triggered_event_gas_init_usdt{executed_gas_init="WEI",quantile="0"} 0
+prochain_executor_gateio_trx_triggered_event_gas_init_usdt{executed_gas_init="WEI",quantile="0.5"} 0
+prochain_executor_gateio_trx_triggered_event_gas_init_usdt{executed_gas_init="WEI",quantile="0.9"} 0
+prochain_executor_gateio_trx_triggered_event_gas_init_usdt{executed_gas_init="WEI",quantile="0.95"} 0
+prochain_executor_gateio_trx_triggered_event_gas_init_usdt{executed_gas_init="WEI",quantile="0.99"} 0
+prochain_executor_gateio_trx_triggered_event_gas_init_usdt{executed_gas_init="WEI",quantile="0.999"} 0
+prochain_executor_gateio_trx_triggered_event_gas_init_usdt{executed_gas_init="WEI",quantile="1"} 0
+prochain_executor_gateio_trx_triggered_event_gas_init_usdt_sum{executed_gas_init="WEI"} 2326339
+prochain_executor_gateio_trx_triggered_event_gas_init_usdt_count{executed_gas_init="WEI"} 10
+
+# TYPE prochain_executor_gateio_trx_pending_possible_opportunity_event_win_usdt summary
+prochain_executor_gateio_trx_pending_possible_opportunity_event_win_usdt{pending_win="usdt",quantile="0"} 11.39784
+prochain_executor_gateio_trx_pending_possible_opportunity_event_win_usdt{pending_win="usdt",quantile="0.5"} 15.921971397096552
+prochain_executor_gateio_trx_pending_possible_opportunity_event_win_usdt{pending_win="usdt",quantile="0.9"} 15.963422385801769
+prochain_executor_gateio_trx_pending_possible_opportunity_event_win_usdt{pending_win="usdt",quantile="0.95"} 15.982589990991627
+prochain_executor_gateio_trx_pending_possible_opportunity_event_win_usdt{pending_win="usdt",quantile="0.99"} 15.982589990991627
+prochain_executor_gateio_trx_pending_possible_opportunity_event_win_usdt{pending_win="usdt",quantile="0.999"} 15.982589990991627
+prochain_executor_gateio_trx_pending_possible_opportunity_event_win_usdt{pending_win="usdt",quantile="1"} 15.98216
+prochain_executor_gateio_trx_pending_possible_opportunity_event_win_usdt_sum{pending_win="usdt"} 46568.19582796724
+prochain_executor_gateio_trx_pending_possible_opportunity_event_win_usdt_count{pending_win="usdt"} 2967
+
+# TYPE prochain_executor_gateio_trx_pending_possible_opportunity_event_percent summary
+prochain_executor_gateio_trx_pending_possible_opportunity_event_percent{pending_opportunity="percent",quantile="0"} 3.79928
+prochain_executor_gateio_trx_pending_possible_opportunity_event_percent{pending_opportunity="percent",quantile="0.5"} 5.307388999937977
+prochain_executor_gateio_trx_pending_possible_opportunity_event_percent{pending_opportunity="percent",quantile="0.9"} 5.321206165915974
+prochain_executor_gateio_trx_pending_possible_opportunity_event_percent{pending_opportunity="percent",quantile="0.95"} 5.32759544613779
+prochain_executor_gateio_trx_pending_possible_opportunity_event_percent{pending_opportunity="percent",quantile="0.99"} 5.32759544613779
+prochain_executor_gateio_trx_pending_possible_opportunity_event_percent{pending_opportunity="percent",quantile="0.999"} 5.32759544613779
+prochain_executor_gateio_trx_pending_possible_opportunity_event_percent{pending_opportunity="percent",quantile="1"} 5.3273866666666665
+prochain_executor_gateio_trx_pending_possible_opportunity_event_percent_sum{pending_opportunity="percent"} 15522.731942655777
+prochain_executor_gateio_trx_pending_possible_opportunity_event_percent_count{pending_opportunity="percent"} 2967
+
+# TYPE prochain_executor_gateio_trx_triggered_event_win_init_usdt summary
+prochain_executor_gateio_trx_triggered_event_win_init_usdt{executed_win_init="usdt",quantile="0"} 0
+prochain_executor_gateio_trx_triggered_event_win_init_usdt{executed_win_init="usdt",quantile="0.5"} 0
+prochain_executor_gateio_trx_triggered_event_win_init_usdt{executed_win_init="usdt",quantile="0.9"} 0
+prochain_executor_gateio_trx_triggered_event_win_init_usdt{executed_win_init="usdt",quantile="0.95"} 0
+prochain_executor_gateio_trx_triggered_event_win_init_usdt{executed_win_init="usdt",quantile="0.99"} 0
+prochain_executor_gateio_trx_triggered_event_win_init_usdt{executed_win_init="usdt",quantile="0.999"} 0
+prochain_executor_gateio_trx_triggered_event_win_init_usdt{executed_win_init="usdt",quantile="1"} 0
+prochain_executor_gateio_trx_triggered_event_win_init_usdt_sum{executed_win_init="usdt"} 147.24554668935298
+prochain_executor_gateio_trx_triggered_event_win_init_usdt_count{executed_win_init="usdt"} 10
+

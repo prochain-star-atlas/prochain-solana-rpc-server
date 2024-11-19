@@ -1,0 +1,107 @@
+[package]
+name = "solana-proxy-rpc-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+time = { workspace = true }
+rayon = { workspace = true }
+itertools = { workspace = true }
+arraydeque = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+log = { workspace = true }
+url = { workspace = true }
+async-trait = { workspace = true }
+sha3 = { workspace = true }
+serde_derive = { workspace = true }
+chrono = { workspace = true }
+simple_logger = { workspace = true }
+anyhow = { workspace = true }
+colored = { workspace = true }
+fern = { workspace = true, features = ["colored"] }
+futures = { workspace = true }
+eyre = { workspace = true }
+hashbrown = { workspace = true }
+serde = { workspace = true, features = ["derive", "rc"] }
+serde_json = { workspace = true, features = ["alloc"] }
+bigdecimal = { workspace = true }
+lazy_static = { workspace = true }
+reqwest = { workspace = true, features = ["json"] }
+dashmap = { workspace = true, features = ["serde"] }
+tracing = { workspace = true }
+signalrs-client = { workspace = true }
+thiserror = { workspace = true }
+num-bigfloat = { workspace = true }
+blst = { workspace = true }
+arc-swap = { workspace = true }
+scopeguard = { workspace = true }
+once_cell = { workspace = true }
+redis = { workspace = true, features = ["tokio-comp"] }
+flate2 = { workspace = true, features = ["zlib-ng"] }
+
+solana-sdk = { workspace = true }
+solana-transaction-status = { workspace = true }
+solana-client = { workspace = true }
+solana-account-decoder = { workspace = true }
+solana-perf = { workspace = true }
+solana-runtime = { workspace = true }
+spl-token = { workspace = true, features = ["no-entrypoint"] }
+solana-inline-spl = { workspace = true }
+spl-token-2022 = { workspace = true }
+
+zstd = { workspace = true }
+
+maplit = { workspace = true }
+
+tonic = { workspace = true }
+
+metrics = { workspace = true }
+metrics-util = { workspace = true }
+metrics-exporter-prometheus = { workspace = true, features = ["http-listener"]}
+quanta = { workspace = true }
+
+rust_decimal = { workspace = true, features = ["serde-with-arbitrary-precision", "serde-with-float"]}
+rust_decimal_macros = { workspace = true }
+
+futures-util = { workspace = true }
+
+binance-rs-async = { workspace = true, features = [ "wallet_api" ] }
+
+parking_lot = { workspace = true }
+
+clap = { workspace = true, features = ["derive"] }
+
+yellowstone-grpc-client = { workspace = true }
+yellowstone-grpc-proto = { workspace = true, default-features = true }
+
+jsonrpc-core = { workspace = true }
+jsonrpc-core-client = { workspace = true }
+jsonrpc-derive = { workspace = true }
+jsonrpc-http-server = { workspace = true }
+jsonrpc-server-utils = { workspace = true }
+
+base64 = { workspace = true }
+bb8 = { workspace = true }
+bs58 = { workspace = true }
+
+actix = { workspace = true }
+actix-web = { workspace = true }
+env_logger = { workspace = true }
+utoipa = { workspace = true, features = ["actix_extras", "chrono"] }
+utoipa-swagger-ui = { workspace = true }
+utoipa-scalar = { workspace = true }
+utoipa-redoc = { workspace = true }
+utoipa-rapidoc = { workspace = true }
+
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+tikv-jemallocator = { workspace = true }
+
+[profile.maxperf]
+inherits = "release"
+debug = true
+lto = "fat"
+opt-level = 3
+codegen-units = 1

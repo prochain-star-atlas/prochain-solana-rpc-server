@@ -80,17 +80,17 @@ protoc-bin-vendored = "3.1.0"
 subtle = { version = "2.5.0" }
 zeroize = { version = "1.7", default-features = false }
 
-solana-account-decoder = "=2.0.15"
-solana-logger = "=2.0.15"
-solana-sdk = "=2.0.15"
-solana-client = "=2.0.15"
-solana-transaction-status = "=2.0.15"
-solana-perf = { version = "=2.0.15" }
-solana-svm = { version = "=2.0.15" }
-solana-runtime = { version = "=2.0.15" }
+solana-account-decoder = "=2.0.16"
+solana-logger = "=2.0.16"
+solana-sdk = "=2.0.16"
+solana-client = "=2.0.16"
+solana-transaction-status = "=2.0.16"
+solana-perf = { version = "=2.0.16" }
+solana-svm = { version = "=2.0.16" }
+solana-runtime = { version = "=2.0.16" }
 spl-token = { version = "=4.0.0", features = ["no-entrypoint"] }
 spl-token-2022 = "4.0.0"
-solana-inline-spl = "=2.0.15"
+solana-inline-spl = "=2.0.16"
 
 jsonrpc-core = "18.0.0"
 jsonrpc-core-client = { version = "18.0.0", features = ["ipc", "ws"] }

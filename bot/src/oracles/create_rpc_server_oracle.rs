@@ -17,7 +17,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) {
 
             log::info!("starting rpc server ...");
 
-            let rpc_bind_address = Ipv4Addr::new(127, 0, 0, 1);
+            let rpc_bind_address = Ipv4Addr::new(0, 0, 0, 0);
         
             let rpc_port: u16 = 4555;
             let rpc_addr = SocketAddr::new(IpAddr::V4(rpc_bind_address), rpc_port);

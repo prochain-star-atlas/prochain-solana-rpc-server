@@ -27,7 +27,7 @@ use spl_token_2022::{
     solana_program::program_pack::Pack,
     state::{Account as TokenAccount, Mint},
 };
-use solana_sdk::commitment_config::CommitmentConfig;
+use solana_sdk::{commitment_config::CommitmentConfig, stake::config};
 use solana_sdk::pubkey::PUBKEY_BYTES;
 use itertools::Itertools;
 use solana_sdk::account::ReadableAccount;
@@ -227,7 +227,7 @@ impl JsonRpcRequestProcessor {
         }
     }
 
-    fn get_prochain_account(&self, pubkey: &Pubkey, commitment: CommitmentConfig) -> ProchainAccountInfo {
+    fn get_prochain_account(&self, pubkey: &Pubkey, config: RpcAccountInfoConfig) -> ProchainAccountInfo {
 
         let cached_acc = self.sol_state.get_account_info(pubkey.clone());
 
@@ -242,8 +242,7 @@ impl JsonRpcRequestProcessor {
 
             info!("[RPC] get_account_info request received: {}", pubkey.to_string());
 
-            let res = self.sol_client.get_account_with_config(pubkey, 
-                RpcAccountInfoConfig { commitment: Some(commitment), encoding: None, data_slice: None, min_context_slot: None }).unwrap();
+            let res = self.sol_client.get_account_with_config(pubkey, config).unwrap();
             let acc_pk = res.value.clone().unwrap_or_default();
 
             let pa = ProchainAccountInfo {
@@ -279,7 +278,7 @@ impl JsonRpcRequestProcessor {
 
         let config = config.unwrap_or_default();
 
-        let pro_account = self.get_prochain_account(pubkey, config.commitment.unwrap_or(CommitmentConfig::confirmed()));
+        let pro_account = self.get_prochain_account(pubkey, config.clone());
 
         let ui_account = UiAccount::encode(pubkey, &pro_account.clone(), config.clone().encoding.unwrap(), None, config.clone().data_slice);
         let slot: u64 = self.sol_state.get_slot();
@@ -381,7 +380,8 @@ impl JsonRpcRequestProcessor {
                 SplTokenAdditionalData::with_decimals(spl_token::native_mint::DECIMALS),
             ))
         } else {
-            let mint_account = self.get_prochain_account(&mint.clone(), CommitmentConfig::confirmed());
+            let config = RpcAccountInfoConfig { commitment: Some(CommitmentConfig::confirmed()), encoding: None, data_slice: None, min_context_slot: None };
+            let mint_account = self.get_prochain_account(&mint.clone(), config);
             let mint_data = self.get_additional_mint_data(mint_account.data()).unwrap();
             Ok((*mint_account.owner(), mint_data))
         }

@@ -235,10 +235,6 @@ impl JsonRpcRequestProcessor {
 
             info!("[MEMORY] get_account_info request received: {}", pubkey.to_string());
 
-            if cached_acc.is_some() {
-                return None;
-            }
-
             let c_acc = cached_acc.unwrap().unwrap();
             return Some(c_acc);
 

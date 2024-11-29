@@ -227,7 +227,7 @@ impl JsonRpcRequestProcessor {
         }
     }
 
-    fn get_prochain_account(&self, pubkey: &Pubkey, config: RpcAccountInfoConfig) -> ProchainAccountInfo {
+    fn get_prochain_account(&self, pubkey: &Pubkey, config: RpcAccountInfoConfig) -> Option<ProchainAccountInfo> {
 
         let cached_acc = self.sol_state.get_account_info(pubkey.clone());
 
@@ -235,8 +235,12 @@ impl JsonRpcRequestProcessor {
 
             info!("[MEMORY] get_account_info request received: {}", pubkey.to_string());
 
+            if cached_acc.is_some() {
+                return None;
+            }
+
             let c_acc = cached_acc.unwrap().unwrap();
-            return c_acc;
+            return Some(c_acc);
 
         } else {
 
@@ -264,7 +268,7 @@ impl JsonRpcRequestProcessor {
             crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
             crate::oracles::create_subscription_oracle::refresh();
 
-            return pa.clone();
+            return Some(pa.clone());
         }
 
     }
@@ -280,16 +284,28 @@ impl JsonRpcRequestProcessor {
 
         let pro_account = self.get_prochain_account(pubkey, config.clone());
 
-        let ui_account = UiAccount::encode(pubkey, &pro_account.clone(), config.clone().encoding.unwrap(), None, config.clone().data_slice);
         let slot: u64 = self.sol_state.get_slot();
 
-        Ok(RpcResponse {
+        if pro_account.is_some() {
+
+            let ui_account = UiAccount::encode(pubkey, &pro_account.unwrap().clone(), config.clone().encoding.unwrap(), None, config.clone().data_slice);
+            
+            return Ok(RpcResponse {
+                context: RpcResponseContext {
+                    api_version: None,
+                    slot: slot.clone()
+                },
+                value: Some(ui_account)
+            });
+        }
+
+        return Ok(RpcResponse {
             context: RpcResponseContext {
                 api_version: None,
-                slot: slot
+                slot: slot.clone()
             },
-            value: Some(ui_account)
-        })
+            value: None
+        });
 
     }
 
@@ -382,8 +398,14 @@ impl JsonRpcRequestProcessor {
         } else {
             let config = RpcAccountInfoConfig { commitment: Some(CommitmentConfig::confirmed()), encoding: None, data_slice: None, min_context_slot: None };
             let mint_account = self.get_prochain_account(&mint.clone(), config);
-            let mint_data = self.get_additional_mint_data(mint_account.data()).unwrap();
-            Ok((*mint_account.owner(), mint_data))
+
+            if mint_account.is_some() {
+                let mintc = mint_account.unwrap();
+                let mint_data = self.get_additional_mint_data(mintc.data()).unwrap();
+                return Ok((*mintc.owner(), mint_data));
+            }
+
+            return Ok((Pubkey::try_from(spl_token::id().to_string().as_str()).unwrap(), SplTokenAdditionalData::default()));
         }
     }
 

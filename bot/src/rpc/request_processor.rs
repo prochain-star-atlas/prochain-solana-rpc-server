@@ -984,6 +984,14 @@ impl JsonRpcRequestProcessor {
         return Ok(new_response(self.sol_state.get_slot() as i64, self.sol_client.get_latest_blockhash().unwrap()));
     }
 
+    pub async fn get_latest_blockhash_with_commitment(
+        &self,
+        commitment: CommitmentConfig
+    ) -> Result<(Hash, u64)>  {
+        info!("[RPC] get_latest_blockhash");
+        return Ok(self.sol_client.get_latest_blockhash_with_commitment(commitment).unwrap());
+    }
+
     pub async fn send_transaction(
         &self,
         transaction: VersionedTransaction,

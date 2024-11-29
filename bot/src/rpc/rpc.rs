@@ -12,6 +12,7 @@ use {
         rpc_response::{Response as RpcResponse, *},
     },
     solana_sdk::pubkey::Pubkey,
+    solana_sdk::hash::Hash
 };
 
 pub const MAX_REQUEST_PAYLOAD_SIZE: usize = 50 * (1 << 10); // 50kB
@@ -40,6 +41,8 @@ fn verify_pubkey(input: &str) -> Result<Pubkey> {
 
 pub mod rpc_accounts {
     use solana_account_decoder::parse_token::UiTokenAmount;
+    use solana_client::rpc_client::SerializableTransaction;
+    use solana_sdk::{signature::Signature, transaction::VersionedTransaction};
     
 
     use super::*;
@@ -103,6 +106,18 @@ pub mod rpc_accounts {
             program_id_str: String,
             config: Option<RpcAccountInfoConfig>
         ) -> BoxFuture<Result<solana_client::rpc_response::Response<UiTokenAmount>>>;
+
+        #[rpc(meta, name = "getLatestBlockhash")]
+        fn get_latest_blockhash(
+            &self,
+            meta:Self::Metadata) -> BoxFuture<Result<solana_client::rpc_response::Response<Hash>>>;
+
+        #[rpc(meta, name = "sendTransaction")]
+        fn send_transaction(
+            &self,
+            meta:Self::Metadata,
+            transaction: VersionedTransaction) -> BoxFuture<Result<Signature>>;
+
     }
 
     pub struct AccountsDataImpl;
@@ -235,7 +250,7 @@ pub mod rpc_accounts {
             meta:Self::Metadata,
             program_id_str:String,
             token_account_filter:RpcTokenAccountsFilter,
-            config:Option<RpcAccountInfoConfig>) -> BoxFuture<Result<Response<Vec<RpcKeyedAccount>>>>  {
+            config:Option<RpcAccountInfoConfig>) -> BoxFuture<Result<Response<Vec<RpcKeyedAccount>>>> {
             
             Box::pin(async move { meta.get_token_account_by_owner(program_id_str, token_account_filter, config).await })
 
@@ -245,12 +260,24 @@ pub mod rpc_accounts {
                 &self,
                 meta:Self::Metadata,
                 program_id_str:String,
-                config:Option<RpcAccountInfoConfig>) -> BoxFuture<Result<Response<UiTokenAmount>>>  {
+                config:Option<RpcAccountInfoConfig>) -> BoxFuture<Result<Response<UiTokenAmount>>> {
             
                     Box::pin(async move { meta.get_token_accounts_balance(program_id_str, config).await })
 
         }
         
+        fn get_latest_blockhash(
+            &self,
+            meta:Self::Metadata) -> BoxFuture<Result<Response<Hash>>> {
+                Box::pin(async move { meta.get_latest_blockhash().await })
+        }
+
+        fn send_transaction(
+            &self,
+            meta:Self::Metadata,
+            transaction: VersionedTransaction) -> BoxFuture<Result<Signature>> {
+                Box::pin(async move { meta.send_transaction(transaction).await })
+            }
 
     }
 }

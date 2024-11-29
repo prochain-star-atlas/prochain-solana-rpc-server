@@ -11,7 +11,7 @@ use {
     }, solana_sdk::{clock::Slot, pubkey::Pubkey
     }, std::sync::Arc
 };
-use solana_client::{rpc_filter::Memcmp, rpc_request::TokenAccountsFilter};
+use solana_client::{rpc_client::SerializableTransaction, rpc_filter::Memcmp, rpc_request::TokenAccountsFilter};
 use jsonrpc_core::{types::error, types::Error};
 use solana_inline_spl::{
     token::{SPL_TOKEN_ACCOUNT_MINT_OFFSET, SPL_TOKEN_ACCOUNT_OWNER_OFFSET},
@@ -27,14 +27,15 @@ use spl_token_2022::{
     solana_program::program_pack::Pack,
     state::{Account as TokenAccount, Mint},
 };
-use solana_sdk::{commitment_config::CommitmentConfig, stake::config};
+use solana_sdk::{commitment_config::CommitmentConfig, stake::config, transaction::VersionedTransaction};
 use solana_sdk::pubkey::PUBKEY_BYTES;
 use itertools::Itertools;
 use solana_sdk::account::ReadableAccount;
 type RpcCustomResult<T> = std::result::Result<T, RpcCustomError>;
 
 use solana_inline_spl::{token::GenericTokenAccount, token_2022::Account};
-
+use solana_sdk::hash::Hash;
+use solana_sdk::signature::Signature;
 use base64::Engine;
 
 const SPL_TOKEN_ACCOUNT_LENGTH: usize = 165;
@@ -974,6 +975,21 @@ impl JsonRpcRequestProcessor {
             value: ui_token_amount
         })
 
+    }
+
+    pub async fn get_latest_blockhash(
+        &self
+    ) -> Result<Response<Hash>>  {
+        info!("[RPC] get_latest_blockhash");
+        return Ok(new_response(self.sol_state.get_slot() as i64, self.sol_client.get_latest_blockhash().unwrap()));
+    }
+
+    pub async fn send_transaction(
+        &self,
+        transaction: VersionedTransaction,
+    ) -> Result<Signature>  {
+        info!("[RPC] send_transaction");
+        return Ok(self.sol_client.send_transaction(&transaction).unwrap());
     }
 
 }

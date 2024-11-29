@@ -11,7 +11,7 @@ use {
     }, solana_sdk::{clock::Slot, pubkey::Pubkey
     }, std::sync::Arc
 };
-use solana_client::{rpc_client::SerializableTransaction, rpc_filter::Memcmp, rpc_request::TokenAccountsFilter};
+use solana_client::{rpc_client::SerializableTransaction, rpc_config::RpcSendTransactionConfig, rpc_filter::Memcmp, rpc_request::TokenAccountsFilter};
 use jsonrpc_core::{types::error, types::Error};
 use solana_inline_spl::{
     token::{SPL_TOKEN_ACCOUNT_MINT_OFFSET, SPL_TOKEN_ACCOUNT_OWNER_OFFSET},
@@ -979,25 +979,36 @@ impl JsonRpcRequestProcessor {
 
     pub async fn get_latest_blockhash(
         &self
-    ) -> Result<Response<Hash>>  {
+    ) -> Result<Response<RpcBlockhash>>  {
         info!("[RPC] get_latest_blockhash");
-        return Ok(new_response(self.sol_state.get_slot() as i64, self.sol_client.get_latest_blockhash().unwrap()));
+        let r = self.sol_client.get_latest_blockhash().unwrap();
+        return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: r.to_string(), last_valid_block_height: 0 }));
     }
 
     pub async fn get_latest_blockhash_with_commitment(
         &self,
         commitment: CommitmentConfig
-    ) -> Result<Response<(Hash, u64)>>  {
+    ) -> Result<Response<RpcBlockhash>>  {
         info!("[RPC] get_latest_blockhash");
-        return Ok(new_response(self.sol_state.get_slot() as i64, self.sol_client.get_latest_blockhash_with_commitment(commitment).unwrap()));
+        let r = self.sol_client.get_latest_blockhash_with_commitment(commitment).unwrap();
+        return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: r.0.to_string(), last_valid_block_height: r.1 }));
     }
 
     pub async fn send_transaction(
         &self,
-        transaction: VersionedTransaction,
-    ) -> Result<Signature>  {
+        data: VersionedTransaction,
+        config: Option<RpcSendTransactionConfig>,
+    ) -> Result<String> {
         info!("[RPC] send_transaction");
-        return Ok(self.sol_client.send_transaction(&transaction).unwrap());
+        return Ok(self.sol_client.send_transaction_with_config(&data, config.unwrap_or_default()).unwrap().to_string());
     }
+
+    // pub async fn send_transaction(
+    //     &self,
+    //     transaction: VersionedTransaction,
+    // ) -> Result<Signature>  {
+    //     info!("[RPC] send_transaction");
+    //     return Ok(self.sol_client.send_transaction(&transaction).unwrap());
+    // }
 
 }

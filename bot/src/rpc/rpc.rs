@@ -111,19 +111,21 @@ pub mod rpc_accounts {
         #[rpc(meta, name = "getLatestBlockhash")]
         fn get_latest_blockhash(
             &self,
-            meta:Self::Metadata) -> BoxFuture<Result<solana_client::rpc_response::Response<Hash>>>;
+            meta:Self::Metadata) -> BoxFuture<Result<solana_client::rpc_response::Response<RpcBlockhash>>>;
 
         #[rpc(meta, name = "getLatestBlockhash")]
         fn get_latest_blockhash_with_commitment(
             &self,
             meta:Self::Metadata,
-            commitment: CommitmentConfig) -> BoxFuture<Result<solana_client::rpc_response::Response<(Hash, u64)>>>;
+            commitment: CommitmentConfig) -> BoxFuture<Result<solana_client::rpc_response::Response<RpcBlockhash>>>;
 
         #[rpc(meta, name = "sendTransaction")]
         fn send_transaction(
             &self,
             meta:Self::Metadata,
-            transaction: VersionedTransaction) -> BoxFuture<Result<Signature>>;
+            data: VersionedTransaction,
+            config: Option<RpcSendTransactionConfig>,
+        ) -> BoxFuture<Result<String>>;
 
     }
 
@@ -275,22 +277,23 @@ pub mod rpc_accounts {
         
         fn get_latest_blockhash(
             &self,
-            meta:Self::Metadata) -> BoxFuture<Result<Response<Hash>>> {
+            meta:Self::Metadata) -> BoxFuture<Result<Response<RpcBlockhash>>> {
                 Box::pin(async move { meta.get_latest_blockhash().await })
         }
 
         fn get_latest_blockhash_with_commitment(
             &self,
             meta:Self::Metadata,
-            commitment: CommitmentConfig) -> BoxFuture<Result<Response<(Hash, u64)>>> {
+            commitment: CommitmentConfig) -> BoxFuture<Result<Response<RpcBlockhash>>> {
                 Box::pin(async move { meta.get_latest_blockhash_with_commitment(commitment).await })
         }
 
         fn send_transaction(
             &self,
             meta:Self::Metadata,
-            transaction: VersionedTransaction) -> BoxFuture<Result<Signature>> {
-                Box::pin(async move { meta.send_transaction(transaction).await })
+            transaction: VersionedTransaction,
+            config: Option<RpcSendTransactionConfig>) -> BoxFuture<Result<String>> {
+                Box::pin(async move { meta.send_transaction(transaction, config).await })
             }
 
     }

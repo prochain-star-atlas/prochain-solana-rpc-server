@@ -117,7 +117,7 @@ pub mod rpc_accounts {
         fn get_latest_blockhash_with_commitment(
             &self,
             meta:Self::Metadata,
-            commitment: CommitmentConfig) -> BoxFuture<Result<(Hash, u64)>>;
+            commitment: CommitmentConfig) -> BoxFuture<Result<solana_client::rpc_response::Response<(Hash, u64)>>>;
 
         #[rpc(meta, name = "sendTransaction")]
         fn send_transaction(
@@ -282,7 +282,7 @@ pub mod rpc_accounts {
         fn get_latest_blockhash_with_commitment(
             &self,
             meta:Self::Metadata,
-            commitment: CommitmentConfig) -> BoxFuture<Result<(Hash, u64)>> {
+            commitment: CommitmentConfig) -> BoxFuture<Result<Response<(Hash, u64)>>> {
                 Box::pin(async move { meta.get_latest_blockhash_with_commitment(commitment).await })
         }
 

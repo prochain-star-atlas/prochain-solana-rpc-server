@@ -235,7 +235,15 @@ impl JsonRpcRequestProcessor {
 
             info!("[MEMORY] get_account_info request received: {}", pubkey.to_string());
 
-            let c_acc = cached_acc.unwrap().unwrap();
+            let c_acc = cached_acc.unwrap();
+
+            if c_acc.is_err() {
+
+                return None;
+
+            }
+
+            let c_acc = c_acc.unwrap();
             return Some(c_acc);
 
         } else {
@@ -243,6 +251,7 @@ impl JsonRpcRequestProcessor {
             info!("[RPC] get_account_info request received: {}", pubkey.to_string());
 
             let res = self.sol_client.get_account_with_config(pubkey, config).unwrap();
+
             let acc_pk = res.value.clone().unwrap_or_default();
 
             let pa = ProchainAccountInfo {
@@ -258,12 +267,19 @@ impl JsonRpcRequestProcessor {
                 last_update: chrono::offset::Utc::now()
             };
 
-            self.sol_state.add_account_info(pubkey.clone(), pa.clone());
-            let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
-            vec_acc.push(pubkey.to_string());
-            crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
-            crate::oracles::create_subscription_oracle::refresh();
+            if res.value.clone().is_some() {
+    
+                self.sol_state.add_account_info(pubkey.clone(), pa.clone());
+                let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
+                vec_acc.push(pubkey.to_string());
+                crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
+                crate::oracles::create_subscription_oracle::refresh();
+    
+                return Some(pa.clone());
 
+            }
+
+            self.sol_state.add_account_info(pubkey.clone(), pa.clone());
             return Some(pa.clone());
         }
 

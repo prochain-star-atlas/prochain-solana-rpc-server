@@ -134,11 +134,12 @@ pub mod rpc_accounts {
             meta:Self::Metadata,
             config: Option<RpcEpochConfig>) -> BoxFuture<Result<EpochInfo>>;
 
+        #[rpc(meta, name = "getSignatureStatuses")]
         fn get_signature_statuses(
             &self,
             meta:Self::Metadata,
             signatures: Vec<Signature>,
-        ) -> BoxFuture<Result<Response<Vec<Option<TransactionStatus>>>>>;
+        ) -> BoxFuture<Result<solana_client::rpc_response::Response<Vec<Option<TransactionStatus>>>>>;
 
     }
 

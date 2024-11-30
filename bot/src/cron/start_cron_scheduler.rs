@@ -16,7 +16,7 @@ pub async fn create_cron_scheduler(state: Arc<SolanaStateManager>, sol_client: A
 
     // Add basic cron job
     sched.add(
-        Job::new("* */10 * * * *", move |_uuid, _l| {
+        Job::new("0 */10 * * * *", move |_uuid, _l| {
             
             let cloned_state = cloned_state_0.clone();
             let cloned_sol_client = cloned_sol_client_0.clone();

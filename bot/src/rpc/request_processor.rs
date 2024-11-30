@@ -12,7 +12,7 @@ use {
     }, std::sync::Arc
 };
 use bincode::Options;
-use solana_client::{rpc_client::SerializableTransaction, rpc_config::{RpcBlockConfig, RpcEpochConfig, RpcSendTransactionConfig}, rpc_filter::Memcmp, rpc_request::TokenAccountsFilter};
+use solana_client::{rpc_client::SerializableTransaction, rpc_config::{RpcBlockConfig, RpcEncodingConfigWrapper, RpcEpochConfig, RpcSendTransactionConfig, RpcTransactionConfig}, rpc_filter::Memcmp, rpc_request::TokenAccountsFilter};
 use jsonrpc_core::{types::error, types::Error};
 use solana_inline_spl::{
     token::{SPL_TOKEN_ACCOUNT_MINT_OFFSET, SPL_TOKEN_ACCOUNT_OWNER_OFFSET},
@@ -24,7 +24,7 @@ use solana_account_decoder::{
         get_token_account_mint, is_known_spl_token_id, token_amount_to_ui_amount_v2, UiTokenAmount
     }, UiAccountData, UiDataSliceConfig, MAX_BASE58_BYTES
 };
-use solana_transaction_status::{TransactionBinaryEncoding, TransactionStatus, UiTransactionEncoding};
+use solana_transaction_status::{EncodedConfirmedTransactionWithStatusMeta, TransactionBinaryEncoding, TransactionStatus, UiTransactionEncoding};
 use spl_token_2022::{
     extension::StateWithExtensions,
     solana_program::program_pack::Pack,
@@ -1050,6 +1050,24 @@ impl JsonRpcRequestProcessor {
             context: to.context,
             value: to.value
         })
+    }
+
+    pub async fn get_transaction(
+        &self,
+        signature: Signature,
+        config: Option<RpcEncodingConfigWrapper<RpcTransactionConfig>>,
+    ) -> Result<Option<EncodedConfirmedTransactionWithStatusMeta>> {
+
+        let config = config
+            .map(|config| config.convert_to_current())
+            .unwrap_or_default();
+        // let encoding = config.encoding.unwrap_or(UiTransactionEncoding::Json);
+
+        // let max_supported_transaction_version = config.max_supported_transaction_version;
+        // let commitment = config.commitment.unwrap_or_default();
+        
+        return Ok(Some(self.sol_client.get_transaction_with_config(&signature, config).unwrap()));
+
     }
 
     // pub async fn send_transaction(

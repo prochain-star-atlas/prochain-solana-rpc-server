@@ -40,11 +40,13 @@ fn verify_pubkey(input: &str) -> Result<Pubkey> {
 }
 
 pub mod rpc_accounts {
+    use std::str::FromStr;
+
     use solana_account_decoder::parse_token::UiTokenAmount;
     use solana_client::rpc_client::SerializableTransaction;
     use solana_runtime::commitment;
     use solana_sdk::{commitment_config::CommitmentConfig, epoch_info::EpochInfo, signature::Signature, transaction::VersionedTransaction};
-    use solana_transaction_status::TransactionStatus;
+    use solana_transaction_status::{EncodedConfirmedTransactionWithStatusMeta, TransactionStatus};
     
 
     use super::*;
@@ -140,6 +142,14 @@ pub mod rpc_accounts {
             meta:Self::Metadata,
             signatures: Vec<String>,
         ) -> BoxFuture<Result<solana_client::rpc_response::Response<Vec<Option<TransactionStatus>>>>>;
+
+        #[rpc(meta, name = "getTransaction")]
+        fn get_transaction(
+            &self,
+            meta: Self::Metadata,
+            signature_str: String,
+            config: Option<RpcEncodingConfigWrapper<RpcTransactionConfig>>,
+        ) -> BoxFuture<Result<Option<EncodedConfirmedTransactionWithStatusMeta>>>;
 
     }
 
@@ -323,6 +333,18 @@ pub mod rpc_accounts {
             signatures: Vec<String>,
         ) -> BoxFuture<Result<Response<Vec<Option<TransactionStatus>>>>> {
             Box::pin(async move { meta.get_signature_statuses(signatures) })
+        }
+
+        fn get_transaction(
+            &self,
+            meta: Self::Metadata,
+            signature_str: String,
+            config: Option<RpcEncodingConfigWrapper<RpcTransactionConfig>>,
+        ) -> BoxFuture<Result<Option<EncodedConfirmedTransactionWithStatusMeta>>> {
+            
+            let signature = Signature::from_str(&signature_str.as_str());
+
+            Box::pin(async move { meta.get_transaction(signature.unwrap(), config).await })
         }
 
     }

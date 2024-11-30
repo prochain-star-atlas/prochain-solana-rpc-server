@@ -2,6 +2,7 @@ pub mod error;
 
 use dashmap::DashMap;
 use log::info;
+use rayon::vec;
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 use utoipa::ToSchema;
@@ -102,6 +103,11 @@ impl SolanaStateManager
         }
     }
 
+    pub fn get_all_account_info_pubkey(&self) -> Vec<Pubkey> {
+        let vec_t: Vec<Pubkey> = self.state_account.iter().map(|e| { e.key().clone() }).collect();
+        return vec_t;
+    }
+
     pub fn show_owner_vec(&self) {
         info!("state_owner: {:?}", self.state_owner);
     }
@@ -178,6 +184,16 @@ impl SolanaStateManager
             self.state_owner.insert(acc.clone().owner, vd);
         }
 
+    }
+
+    pub fn add_account_info_without_owner(&self, pub_key: Pubkey, acc: ProchainAccountInfo) {
+        if self.state_account.contains_key(&pub_key) {
+            self.state_account.alter(&pub_key, |k, v| {
+                return acc.clone();
+            });
+        } else {
+            self.state_account.insert(pub_key, acc.clone());
+        }
     }
 
     pub fn clean_zero_account(&self, pub_key: Pubkey) {

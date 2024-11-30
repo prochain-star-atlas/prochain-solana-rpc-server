@@ -7,6 +7,7 @@ mod rpc;
 mod solana_state;
 mod http;
 mod model;
+mod cron;
 
 use std::panic;
 use fern::Dispatch;

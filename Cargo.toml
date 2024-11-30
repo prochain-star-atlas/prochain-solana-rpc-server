@@ -116,6 +116,8 @@ utoipa-scalar = { git = "https://github.com/juhaku/utoipa.git", rev = "d020f92",
 utoipa-redoc = { git = "https://github.com/juhaku/utoipa.git", rev = "d020f92", features = ["actix-web"]}
 utoipa-rapidoc = { git = "https://github.com/juhaku/utoipa.git", rev = "d020f92", features = ["actix-web"]}
 
+tokio-cron-scheduler = "0.13.0"
+
 [patch.crates-io]
 aes-gcm-siv = { git = 'https://github.com/block-mesh/AEADs', branch = 'rustls-dep-hell-1-18' }
 curve25519-dalek = { git = "https://github.com/block-mesh/curve25519-dalek", branch = "rustls-dep-hell-1-18" }

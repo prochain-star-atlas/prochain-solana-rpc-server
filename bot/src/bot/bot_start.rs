@@ -1,5 +1,5 @@
 use std::{sync::Arc, time::Duration};
-use crate::{http::start_web_server::start_httpd, oracles::{create_rpc_server_oracle, create_token_list_oracle, handle_user_address_oracle}, solana_state::{self}, utils::types::{ events::*, structs::bot::Bot }};
+use crate::{cron::start_cron_scheduler::create_cron_scheduler, http::start_web_server::start_httpd, oracles::{create_rpc_server_oracle, create_token_list_oracle, handle_user_address_oracle}, solana_state::{self}, utils::types::{ events::*, structs::bot::Bot }};
 use parking_lot::RwLock;
 use solana_client::rpc_client::RpcClient;
 use crate::oracles::create_subscription_oracle;
@@ -42,6 +42,8 @@ pub async fn start() {
     create_rpc_server_oracle::run(arc_state.clone(), sol_client.clone()).await;
 
     start_httpd();
+
+    let _cron = create_cron_scheduler(arc_state.clone(), sol_client.clone()).await;
 
     log::info!("All Oracles Started");
 

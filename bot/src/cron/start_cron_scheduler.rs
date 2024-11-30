@@ -26,7 +26,7 @@ pub async fn create_cron_scheduler(state: Arc<SolanaStateManager>, sol_client: A
             let all_keys = cloned_state.get_all_account_info_pubkey();
             all_keys.iter().for_each(|pk| {
                         
-                let res = cloned_sol_client.get_account(&pk);   
+                let res = cloned_sol_client.get_account(&pk.clone());   
         
                 if res.is_ok() {
         

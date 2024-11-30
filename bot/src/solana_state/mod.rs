@@ -104,7 +104,7 @@ impl SolanaStateManager
     }
 
     pub fn get_all_account_info_pubkey(&self) -> Vec<Pubkey> {
-        let vec_t: Vec<Pubkey> = self.state_account.iter().map(|e| { e.key().clone() }).collect();
+        let vec_t: Vec<Pubkey> = self.state_account.iter().filter(|p| { p.lamports > 0 }).map(|e| { e.key().clone() }).collect();
         return vec_t;
     }
 

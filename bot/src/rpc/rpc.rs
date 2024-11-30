@@ -123,7 +123,7 @@ pub mod rpc_accounts {
         fn send_transaction(
             &self,
             meta:Self::Metadata,
-            data: VersionedTransaction,
+            data: String,
             config: Option<RpcSendTransactionConfig>,
         ) -> BoxFuture<Result<String>>;
 
@@ -297,7 +297,7 @@ pub mod rpc_accounts {
         fn send_transaction(
             &self,
             meta:Self::Metadata,
-            transaction: VersionedTransaction,
+            transaction: String,
             config: Option<RpcSendTransactionConfig>) -> BoxFuture<Result<String>> {
                 Box::pin(async move { meta.send_transaction(transaction, config).await })
         }

@@ -11,17 +11,20 @@ use {
     }, solana_sdk::{clock::Slot, pubkey::Pubkey
     }, std::sync::Arc
 };
+use bincode::Options;
 use solana_client::{rpc_client::SerializableTransaction, rpc_config::{RpcBlockConfig, RpcEpochConfig, RpcSendTransactionConfig}, rpc_filter::Memcmp, rpc_request::TokenAccountsFilter};
 use jsonrpc_core::{types::error, types::Error};
 use solana_inline_spl::{
     token::{SPL_TOKEN_ACCOUNT_MINT_OFFSET, SPL_TOKEN_ACCOUNT_OWNER_OFFSET},
     token_2022::{self, ACCOUNTTYPE_ACCOUNT},
 };
+use base64::{prelude::BASE64_STANDARD};
 use solana_account_decoder::{
     parse_account_data::{AccountAdditionalDataV2, SplTokenAdditionalData}, parse_token::{
         get_token_account_mint, is_known_spl_token_id, token_amount_to_ui_amount_v2, UiTokenAmount
     }, UiAccountData, UiDataSliceConfig, MAX_BASE58_BYTES
 };
+use solana_transaction_status::{TransactionBinaryEncoding, UiTransactionEncoding};
 use spl_token_2022::{
     extension::StateWithExtensions,
     solana_program::program_pack::Pack,
@@ -37,6 +40,9 @@ use solana_inline_spl::{token::GenericTokenAccount, token_2022::Account};
 use solana_sdk::hash::Hash;
 use solana_sdk::signature::Signature;
 use base64::Engine;
+use std::any::type_name;
+
+use solana_perf::packet::PACKET_DATA_SIZE;
 
 const SPL_TOKEN_ACCOUNT_LENGTH: usize = 165;
 
@@ -996,11 +1002,28 @@ impl JsonRpcRequestProcessor {
 
     pub async fn send_transaction(
         &self,
-        data: VersionedTransaction,
+        data: String,
         config: Option<RpcSendTransactionConfig>,
     ) -> Result<String> {
         info!("[RPC] send_transaction");
-        return Ok(self.sol_client.send_transaction_with_config(&data, config.unwrap_or_default()).unwrap().to_string());
+
+        let RpcSendTransactionConfig {
+            skip_preflight,
+            preflight_commitment,
+            encoding,
+            max_retries,
+            min_context_slot,
+        } = config.unwrap_or_default();
+        let tx_encoding = encoding.unwrap_or(UiTransactionEncoding::Base58);
+        let binary_encoding = tx_encoding.into_binary_encoding().ok_or_else(|| {
+            Error::invalid_params(format!(
+                "unsupported encoding: {tx_encoding}. Supported encodings: base58, base64"
+            ))
+        })?;
+        let (wire_transaction, unsanitized_tx) =
+            decode_and_deserialize::<VersionedTransaction>(data, binary_encoding)?;
+
+        return Ok(self.sol_client.send_transaction_with_config(&unsanitized_tx, config.unwrap_or_default()).unwrap().to_string());
     }
 
     pub async fn get_epoch_info_with_commitment(
@@ -1021,4 +1044,66 @@ impl JsonRpcRequestProcessor {
     //     return Ok(self.sol_client.send_transaction(&transaction).unwrap());
     // }
 
+}
+
+const MAX_BASE58_SIZE: usize = 1683; // Golden, bump if PACKET_DATA_SIZE changes
+const MAX_BASE64_SIZE: usize = 1644; // Golden, bump if PACKET_DATA_SIZE changes
+fn decode_and_deserialize<T>(
+    encoded: String,
+    encoding: TransactionBinaryEncoding,
+) -> Result<(Vec<u8>, T)>
+where
+    T: serde::de::DeserializeOwned,
+{
+    let wire_output = match encoding {
+        TransactionBinaryEncoding::Base58 => {
+            if encoded.len() > MAX_BASE58_SIZE {
+                return Err(Error::invalid_params(format!(
+                    "base58 encoded {} too large: {} bytes (max: encoded/raw {}/{})",
+                    type_name::<T>(),
+                    encoded.len(),
+                    MAX_BASE58_SIZE,
+                    PACKET_DATA_SIZE,
+                )));
+            }
+            bs58::decode(encoded)
+                .into_vec()
+                .map_err(|e| Error::invalid_params(format!("invalid base58 encoding: {e:?}")))?
+        }
+        TransactionBinaryEncoding::Base64 => {
+            if encoded.len() > MAX_BASE64_SIZE {
+                return Err(Error::invalid_params(format!(
+                    "base64 encoded {} too large: {} bytes (max: encoded/raw {}/{})",
+                    type_name::<T>(),
+                    encoded.len(),
+                    MAX_BASE64_SIZE,
+                    PACKET_DATA_SIZE,
+                )));
+            }
+            BASE64_STANDARD
+                .decode(encoded)
+                .map_err(|e| Error::invalid_params(format!("invalid base64 encoding: {e:?}")))?
+        }
+    };
+    if wire_output.len() > PACKET_DATA_SIZE {
+        return Err(Error::invalid_params(format!(
+            "decoded {} too large: {} bytes (max: {} bytes)",
+            type_name::<T>(),
+            wire_output.len(),
+            PACKET_DATA_SIZE
+        )));
+    }
+    bincode::options()
+        .with_limit(PACKET_DATA_SIZE as u64)
+        .with_fixint_encoding()
+        .allow_trailing_bytes()
+        .deserialize_from(&wire_output[..])
+        .map_err(|err| {
+            Error::invalid_params(format!(
+                "failed to deserialize {}: {}",
+                type_name::<T>(),
+                &err.to_string()
+            ))
+        })
+        .map(|output| (wire_output, output))
 }

@@ -6622,6 +6622,7 @@ dependencies = [
  "bb8",
  "bigdecimal",
  "binance-rs-async",
+ "bincode",
  "blst",
  "bs58 0.5.1",
  "chrono",

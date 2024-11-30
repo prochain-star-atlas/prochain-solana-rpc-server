@@ -41,6 +41,7 @@ scopeguard = { workspace = true }
 once_cell = { workspace = true }
 redis = { workspace = true, features = ["tokio-comp"] }
 flate2 = { workspace = true, features = ["zlib-ng"] }
+bincode = { workspace = true }
 
 solana-sdk = { workspace = true }
 solana-transaction-status = { workspace = true }

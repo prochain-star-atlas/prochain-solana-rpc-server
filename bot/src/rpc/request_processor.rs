@@ -24,7 +24,7 @@ use solana_account_decoder::{
         get_token_account_mint, is_known_spl_token_id, token_amount_to_ui_amount_v2, UiTokenAmount
     }, UiAccountData, UiDataSliceConfig, MAX_BASE58_BYTES
 };
-use solana_transaction_status::{TransactionBinaryEncoding, UiTransactionEncoding};
+use solana_transaction_status::{TransactionBinaryEncoding, TransactionStatus, UiTransactionEncoding};
 use spl_token_2022::{
     extension::StateWithExtensions,
     solana_program::program_pack::Pack,
@@ -1034,6 +1034,20 @@ impl JsonRpcRequestProcessor {
         let commit = def.commitment.unwrap_or_default();
         info!("[RPC] get_epoch_info_with_commitment");
         return Ok(self.sol_client.get_epoch_info_with_commitment(commit).unwrap());
+    }
+
+    pub fn get_signature_statuses(
+        &self,
+        signatures: &[Signature],
+    ) -> Result<Response<Vec<Option<TransactionStatus>>>> {
+        info!("[RPC] get_epoch_info_with_commitment");
+        
+        let to = self.sol_client.get_signature_statuses(&signatures).unwrap();
+
+        Ok(RpcResponse {
+            context: to.context,
+            value: to.value
+        })
     }
 
     // pub async fn send_transaction(

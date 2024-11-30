@@ -44,6 +44,7 @@ pub mod rpc_accounts {
     use solana_client::rpc_client::SerializableTransaction;
     use solana_runtime::commitment;
     use solana_sdk::{commitment_config::CommitmentConfig, epoch_info::EpochInfo, signature::Signature, transaction::VersionedTransaction};
+    use solana_transaction_status::TransactionStatus;
     
 
     use super::*;
@@ -132,6 +133,12 @@ pub mod rpc_accounts {
             &self,
             meta:Self::Metadata,
             config: Option<RpcEpochConfig>) -> BoxFuture<Result<EpochInfo>>;
+
+        fn get_signature_statuses(
+            &self,
+            meta:Self::Metadata,
+            signatures: Vec<Signature>,
+        ) -> BoxFuture<Result<Response<Vec<Option<TransactionStatus>>>>>;
 
     }
 
@@ -307,6 +314,14 @@ pub mod rpc_accounts {
             meta:Self::Metadata,
             config: Option<RpcEpochConfig>) -> BoxFuture<Result<EpochInfo>> {
                 Box::pin(async move { meta.get_epoch_info_with_commitment(config).await })
+        }
+
+        fn get_signature_statuses(
+            &self,
+            meta:Self::Metadata,
+            signatures: Vec<Signature>,
+        ) -> BoxFuture<Result<Response<Vec<Option<TransactionStatus>>>>> {
+            Box::pin(async move { meta.get_signature_statuses(&signatures) })
         }
 
     }

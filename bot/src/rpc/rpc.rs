@@ -138,7 +138,7 @@ pub mod rpc_accounts {
         fn get_signature_statuses(
             &self,
             meta:Self::Metadata,
-            signatures: Vec<Signature>,
+            signatures: Vec<String>,
         ) -> BoxFuture<Result<solana_client::rpc_response::Response<Vec<Option<TransactionStatus>>>>>;
 
     }
@@ -320,9 +320,9 @@ pub mod rpc_accounts {
         fn get_signature_statuses(
             &self,
             meta:Self::Metadata,
-            signatures: Vec<Signature>,
+            signatures: Vec<String>,
         ) -> BoxFuture<Result<Response<Vec<Option<TransactionStatus>>>>> {
-            Box::pin(async move { meta.get_signature_statuses(&signatures) })
+            Box::pin(async move { meta.get_signature_statuses(signatures) })
         }
 
     }

@@ -1,4 +1,4 @@
-use std::{cmp::min, collections::HashMap};
+use std::{cmp::min, collections::HashMap, str::FromStr};
 
 /// The JSON request processor
 /// This takes the request from the client and load the information from the datastore.
@@ -1038,11 +1038,13 @@ impl JsonRpcRequestProcessor {
 
     pub fn get_signature_statuses(
         &self,
-        signatures: &[Signature],
+        signatures: Vec<String>,
     ) -> Result<Response<Vec<Option<TransactionStatus>>>> {
         info!("[RPC] get_epoch_info_with_commitment");
         
-        let to = self.sol_client.get_signature_statuses(&signatures).unwrap();
+        let vec_sign: Vec<Signature> = signatures.iter().map(|f| Signature::from_str(f.as_str()).unwrap()).collect();
+
+        let to = self.sol_client.get_signature_statuses(vec_sign.as_slice()).unwrap();
 
         Ok(RpcResponse {
             context: to.context,

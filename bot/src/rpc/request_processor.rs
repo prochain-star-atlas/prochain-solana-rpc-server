@@ -11,7 +11,7 @@ use {
     }, solana_sdk::{clock::Slot, pubkey::Pubkey
     }, std::sync::Arc
 };
-use solana_client::{rpc_client::SerializableTransaction, rpc_config::RpcSendTransactionConfig, rpc_filter::Memcmp, rpc_request::TokenAccountsFilter};
+use solana_client::{rpc_client::SerializableTransaction, rpc_config::{RpcBlockConfig, RpcEpochConfig, RpcSendTransactionConfig}, rpc_filter::Memcmp, rpc_request::TokenAccountsFilter};
 use jsonrpc_core::{types::error, types::Error};
 use solana_inline_spl::{
     token::{SPL_TOKEN_ACCOUNT_MINT_OFFSET, SPL_TOKEN_ACCOUNT_OWNER_OFFSET},
@@ -27,7 +27,7 @@ use spl_token_2022::{
     solana_program::program_pack::Pack,
     state::{Account as TokenAccount, Mint},
 };
-use solana_sdk::{commitment_config::CommitmentConfig, stake::config, transaction::VersionedTransaction};
+use solana_sdk::{commitment_config::CommitmentConfig, epoch_info::EpochInfo, stake::config, transaction::VersionedTransaction};
 use solana_sdk::pubkey::PUBKEY_BYTES;
 use itertools::Itertools;
 use solana_sdk::account::ReadableAccount;
@@ -1001,6 +1001,16 @@ impl JsonRpcRequestProcessor {
     ) -> Result<String> {
         info!("[RPC] send_transaction");
         return Ok(self.sol_client.send_transaction_with_config(&data, config.unwrap_or_default()).unwrap().to_string());
+    }
+
+    pub async fn get_epoch_info_with_commitment(
+        &self,
+        config: Option<RpcEpochConfig>,
+    ) -> Result<EpochInfo> {
+        let def = config.unwrap_or_default();
+        let commit = def.commitment.unwrap_or_default();
+        info!("[RPC] get_epoch_info_with_commitment");
+        return Ok(self.sol_client.get_epoch_info_with_commitment(commit).unwrap());
     }
 
     // pub async fn send_transaction(

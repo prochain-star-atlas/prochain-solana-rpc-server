@@ -43,7 +43,7 @@ pub mod rpc_accounts {
     use solana_account_decoder::parse_token::UiTokenAmount;
     use solana_client::rpc_client::SerializableTransaction;
     use solana_runtime::commitment;
-    use solana_sdk::{commitment_config::CommitmentConfig, signature::Signature, transaction::VersionedTransaction};
+    use solana_sdk::{commitment_config::CommitmentConfig, epoch_info::EpochInfo, signature::Signature, transaction::VersionedTransaction};
     
 
     use super::*;
@@ -126,6 +126,12 @@ pub mod rpc_accounts {
             data: VersionedTransaction,
             config: Option<RpcSendTransactionConfig>,
         ) -> BoxFuture<Result<String>>;
+
+        #[rpc(meta, name = "getEpochInfo")]
+        fn get_epoch_info_with_commitment(
+            &self,
+            meta:Self::Metadata,
+            config: Option<RpcEpochConfig>) -> BoxFuture<Result<EpochInfo>>;
 
     }
 
@@ -294,7 +300,14 @@ pub mod rpc_accounts {
             transaction: VersionedTransaction,
             config: Option<RpcSendTransactionConfig>) -> BoxFuture<Result<String>> {
                 Box::pin(async move { meta.send_transaction(transaction, config).await })
-            }
+        }
+
+        fn get_epoch_info_with_commitment(
+            &self,
+            meta:Self::Metadata,
+            config: Option<RpcEpochConfig>) -> BoxFuture<Result<EpochInfo>> {
+                Box::pin(async move { meta.get_epoch_info_with_commitment(config).await })
+        }
 
     }
 }

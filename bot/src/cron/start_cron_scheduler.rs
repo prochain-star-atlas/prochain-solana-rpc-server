@@ -16,7 +16,7 @@ pub async fn create_cron_scheduler(state: Arc<SolanaStateManager>, sol_client: A
 
     // Add basic cron job
     sched.add(
-        Job::new("* 1/10 * * * *", move |_uuid, _l| {
+        Job::new("* */10 * * * *", move |_uuid, _l| {
             
             let cloned_state = cloned_state_0.clone();
             let cloned_sol_client = cloned_sol_client_0.clone();
@@ -47,10 +47,15 @@ pub async fn create_cron_scheduler(state: Arc<SolanaStateManager>, sol_client: A
                         last_update: chrono::offset::Utc::now()
                     };
         
-                    cloned_state.add_account_info(pk.clone(), tt);
+                    cloned_state.add_account_info_without_owner(pk.clone(), tt);
         
                 } else {
-                    log::error!("error calling get_account: {}", res.err().unwrap());
+                    let err = res.err().unwrap();
+                    log::error!("error calling get_account: {}", err);
+
+                    if err.to_string().contains(&String::from("AccountNotFound")) {
+                        cloned_state.clean_zero_account(pk.clone());
+                    }
                 }       
         
             }); 

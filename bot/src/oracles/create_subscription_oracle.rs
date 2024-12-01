@@ -434,7 +434,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
             let mut hp = HashMap::new();
             hp.insert(sub_name_local_3.clone() + "_token", SubscribeRequestFilterAccounts {
                 account: get_mutex_token_sub(sub_name_local_3.clone()),
-                owner: vec![String::from_str("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA").unwrap()],
+                owner: vec![],
                 filters: vec![],
             });
 
@@ -543,7 +543,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                 signature: None,
                 account_include: get_mutex_transaction_sub(sub_name_local_4.clone()),
                 account_exclude: vec![],
-                account_required: get_mutex_transaction_sub(sub_name_local_4.clone()),
+                account_required: vec![],
             });
 
             let _res = subscribe_tx

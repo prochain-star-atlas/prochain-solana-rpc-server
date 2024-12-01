@@ -910,11 +910,19 @@ impl JsonRpcRequestProcessor {
             });
 
             let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_program_sub(String::from("sage"));
-            if !vec_acc.contains(&program_id_str) {
-                vec_acc.push(program_id_str);
+            if !vec_acc.contains(&program_id_str.clone()) {
+                vec_acc.push(program_id_str.clone());
                 
                 crate::oracles::create_subscription_oracle::set_mutex_program_sub(String::from("sage"), vec_acc);
                 crate::oracles::create_subscription_oracle::refresh_owner();
+            }
+
+            let mut vec_token_trans = crate::oracles::create_subscription_oracle::get_mutex_transaction_sub(String::from("sage"));
+            if !vec_token_trans.contains(&program_id_str.clone()) {
+                vec_token_trans.push(program_id_str.clone());
+
+                crate::oracles::create_subscription_oracle::set_mutex_transaction_sub(String::from("sage"), vec_token_trans);
+                crate::oracles::create_subscription_oracle::refresh_transaction();
             }
 
             let mut vec_acc_v = crate::oracles::create_subscription_oracle::get_mutex_token_sub(String::from("sage"));

@@ -37,6 +37,8 @@ pub async fn start() {
 
     handle_user_address_oracle::add_user_address_to_index_with_all_child_with_sub(Pubkey::try_from("Hc9iztjxoMiE9uv38WUvwzLqWCN153eF5mFSLZUecB7J").unwrap(), arc_state.clone(), sol_client.clone());
 
+    crate::oracles::create_subscription_oracle::set_mutex_transaction_sub(String::from("sage"), vec![String::from("Hc9iztjxoMiE9uv38WUvwzLqWCN153eF5mFSLZUecB7J")]);
+
     create_subscription_oracle::run(arc_state.clone(), sol_client.clone(), String::from("sage")).await;
 
     create_rpc_server_oracle::run(arc_state.clone(), sol_client.clone()).await;

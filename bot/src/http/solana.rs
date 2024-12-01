@@ -14,6 +14,10 @@ use crate::{model::model::GrpcYellowstoneSubscription, solana_state::{ProchainAc
 #[openapi(
     paths(
         get_solana_cached_acount_info,
+        get_solana_cached_subscription_owner,
+        get_solana_cached_subscription_tokenowner,
+        get_solana_cached_subscription_account,
+        get_solana_subscription_settings
     ),
     components(schemas(ProchainAccountInfoSchema, GrpcYellowstoneSubscription))
 )]
@@ -23,6 +27,9 @@ pub(super) fn configure() -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
         config
             .service(get_solana_cached_acount_info)
+            .service(get_solana_cached_subscription_owner)
+            .service(get_solana_cached_subscription_tokenowner)
+            .service(get_solana_cached_subscription_account)
             .service(get_solana_subscription_settings);
     }
 }
@@ -30,7 +37,7 @@ pub(super) fn configure() -> impl FnOnce(&mut ServiceConfig) {
 /// Get list of twich channel.
 #[utoipa::path(
     responses(
-        (status = 200, description = "get cached solana acco", body = [ProchainAccountInfo])
+        (status = 200, description = "get cached solana acco", body = [ProchainAccountInfoSchema])
     )
 )]
 #[get("/solana/cached/account/{addr}")]
@@ -56,7 +63,7 @@ async fn get_solana_cached_acount_info(addr: Path<String>) -> impl Responder {
     };
 
     HttpResponse::Ok().json(acc_info)
-    
+
 }
 
 #[utoipa::path(
@@ -113,15 +120,15 @@ async fn get_solana_cached_subscription_owner(owner: Path<String>) -> impl Respo
         (status = 200, description = "add subscription by token owner", body = [bool])
     )
 )]
-#[get("/solana/cached/subscription/tokenowner/{owner}")]
-async fn get_solana_cached_subscription_tokenowner(owner: Path<String>) -> impl Responder {
+#[get("/solana/cached/subscription/tokenowner/{tokenowner}")]
+async fn get_solana_cached_subscription_tokenowner(tokenowner: Path<String>) -> impl Responder {
 
-    let program_id_str = owner.to_string();
-    let token_account_filter = RpcTokenAccountsFilter::ProgramId(owner.to_string());
+    let program_id_str = tokenowner.to_string();
+    let token_account_filter = RpcTokenAccountsFilter::ProgramId(tokenowner.to_string());
     let config = Some( RpcAccountInfoConfig { encoding: None, data_slice: None, commitment: Some(CommitmentConfig { commitment: CommitmentLevel::Confirmed }), min_context_slot: None } );
 
     let state = crate::solana_state::get_solana_state();
-    let pubkey_owner = Pubkey::try_from(owner.to_string().as_str()).unwrap();
+    let pubkey_owner = Pubkey::try_from(tokenowner.to_string().as_str()).unwrap();
     let sol_client = state.get_sol_client();
 
     let res_rpc: RpcResult<Vec<RpcKeyedAccount>> = sol_client.send(

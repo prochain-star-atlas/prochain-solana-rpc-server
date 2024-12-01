@@ -199,7 +199,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                     transactions: HashMap::new(),
                     transactions_status: HashMap::new(),
                     entry: HashMap::new(),
-                    blocks: hashmap! { "".to_owned() => SubscribeRequestFilterBlocks { account_include: get_mutex_account_sub(sub_name_local.clone()), include_transactions: Some(false), include_accounts: Some(true), include_entries: Some(false) } },
+                    blocks: HashMap::new(),
                     blocks_meta: hashmap! { "".to_owned() => SubscribeRequestFilterBlocksMeta {} },
                     commitment: Some(1 as i32),
                     accounts_data_slice: vec![],

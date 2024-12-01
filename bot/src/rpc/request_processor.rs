@@ -885,12 +885,12 @@ impl JsonRpcRequestProcessor {
     
             let ar_results = res_unwrapped.unwrap().clone();
 
-            let mut ar_pkey: Vec<Pubkey> = vec![];
+            let mut ar_pkey: Vec<String> = vec![];
 
             ar_results.value.iter().for_each(|f| {
                 let pb = Pubkey::try_from(f.pubkey.as_str()).unwrap();  
                 let acc_raw = self.sol_client.get_account(&pb).unwrap();       
-                ar_pkey.push(pb);
+                ar_pkey.push(pb.to_string());
 
                 let pca = ProchainAccountInfo {
                     data: acc_raw.data.clone(),
@@ -910,10 +910,22 @@ impl JsonRpcRequestProcessor {
             });
 
             let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_program_sub(String::from("sage"));
-            vec_acc.push(program_id_str);
-            let v: Vec<_> = vec_acc.into_iter().unique().collect();
-            crate::oracles::create_subscription_oracle::set_mutex_program_sub(String::from("sage"), v);
-            crate::oracles::create_subscription_oracle::refresh_owner();
+            if !vec_acc.contains(&program_id_str) {
+                vec_acc.push(program_id_str);
+                
+                crate::oracles::create_subscription_oracle::set_mutex_program_sub(String::from("sage"), vec_acc);
+                crate::oracles::create_subscription_oracle::refresh_owner();
+            }
+
+            let mut vec_acc_v = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
+            let len_origin = vec_acc_v.len();
+            vec_acc_v.append(&mut ar_pkey);
+            let vec_acc_v_uniq: Vec<String> = vec_acc_v.into_iter().unique().collect();
+
+            if len_origin != vec_acc_v_uniq.len() {
+                crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc_v_uniq);
+                crate::oracles::create_subscription_oracle::refresh();
+            }
 
             Ok(ar_results)
         }

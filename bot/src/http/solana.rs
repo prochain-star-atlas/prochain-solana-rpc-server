@@ -242,7 +242,7 @@ async fn get_solana_cached_subscription_account(account: Path<String>) -> impl R
 )]
 #[get("/solana/subscription/settings")]
 async fn get_solana_subscription_settings() -> impl Responder {
-    let sub_name = String::from("Sage");
+    let sub_name = String::from("sage");
     let sage_program = crate::oracles::create_subscription_oracle::get_mutex_program_sub(sub_name.clone());
     let sage_account = crate::oracles::create_subscription_oracle::get_mutex_account_sub(sub_name.clone());
 

@@ -199,7 +199,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                     transactions: HashMap::new(),
                     transactions_status: HashMap::new(),
                     entry: HashMap::new(),
-                    blocks: hashmap! { "".to_owned() => SubscribeRequestFilterBlocks { account_include: vec![], include_transactions: Some(false), include_accounts: Some(true), include_entries: Some(false) } },
+                    blocks: hashmap! { "".to_owned() => SubscribeRequestFilterBlocks { account_include: get_mutex_account_sub(sub_name_local.clone()), include_transactions: Some(false), include_accounts: Some(true), include_entries: Some(false) } },
                     blocks_meta: hashmap! { "".to_owned() => SubscribeRequestFilterBlocksMeta {} },
                     commitment: Some(1 as i32),
                     accounts_data_slice: vec![],
@@ -237,7 +237,13 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                                 counter_int = counter_int + 1;
 
                                 if let Some(acc) = tx.account {
-                                    local_arc.handle_account_update(acc);
+
+                                    if acc.lamports == 0 {
+                                        local_arc.clean_zero_account(Pubkey::from_str(String::from_utf8(acc.pubkey.clone()).unwrap_or_default().as_str()).unwrap_or_default());
+                                    } else {
+                                        local_arc.handle_account_update(acc);
+                                    }
+                                    
                                 }
                             }
                             Some(UpdateOneof::BlockMeta(blockmeta)) => {
@@ -336,7 +342,11 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                                 counter_int = counter_int + 1;
 
                                 if let Some(acc) = tx.account {
-                                    local_arc_2.handle_account_update(acc);
+                                    if acc.lamports == 0 {
+                                        local_arc_2.clean_zero_account(Pubkey::from_str(String::from_utf8(acc.pubkey.clone()).unwrap_or_default().as_str()).unwrap_or_default());
+                                    } else {
+                                        local_arc_2.handle_account_update(acc);
+                                    }
                                 }
                             }
                             Some(UpdateOneof::BlockMeta(block)) => {

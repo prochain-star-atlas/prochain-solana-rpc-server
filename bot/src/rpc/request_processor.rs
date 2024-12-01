@@ -709,7 +709,7 @@ impl JsonRpcRequestProcessor {
             vec_acc.push(program_id.to_string());
             let v: Vec<_> = vec_acc.into_iter().unique().collect();
             crate::oracles::create_subscription_oracle::set_mutex_program_sub(String::from("sage"), v);
-            crate::oracles::create_subscription_oracle::refresh();
+            crate::oracles::create_subscription_oracle::refresh_owner();
 
         }
 
@@ -913,7 +913,7 @@ impl JsonRpcRequestProcessor {
             vec_acc.push(program_id_str);
             let v: Vec<_> = vec_acc.into_iter().unique().collect();
             crate::oracles::create_subscription_oracle::set_mutex_program_sub(String::from("sage"), v);
-            crate::oracles::create_subscription_oracle::refresh();
+            crate::oracles::create_subscription_oracle::refresh_owner();
 
             Ok(ar_results)
         }

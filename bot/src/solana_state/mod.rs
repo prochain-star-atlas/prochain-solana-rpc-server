@@ -33,11 +33,25 @@ pub fn get_solana_state() -> Arc<SolanaStateManager> {
 
 impl Eq for ProchainAccountInfo {}
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema, PartialEq)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct ProchainAccountInfo {
     pub pubkey: Pubkey,
     pub lamports: u64,
     pub owner: Pubkey,
+    pub executable: bool,
+    pub rent_epoch: u64,
+    pub data: Vec<u8>,
+    pub slot: u64,
+    pub write_version: u64,
+    pub txn_signature: Option<Vec<u8>>,
+    pub last_update: chrono::DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ToSchema, PartialEq)]
+pub struct ProchainAccountInfoSchema {
+    pub pubkey: String,
+    pub lamports: u64,
+    pub owner: String,
     pub executable: bool,
     pub rent_epoch: u64,
     pub data: Vec<u8>,
@@ -101,6 +115,10 @@ impl SolanaStateManager
             slot: Arc::new(slot_a),
             sol_client: sol_client
         }
+    }
+
+    pub fn get_sol_client(&self) -> Arc<RpcClient> {
+        return self.sol_client.clone();
     }
 
     pub fn get_all_account_info_pubkey(&self) -> Vec<Pubkey> {

@@ -25,7 +25,6 @@ use dashmap::DashMap;
 use solana_client::{rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig}};
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey, signer::Signer};
 use tracing::info;
-use yellowstone_grpc_proto::geyser::SubscribeRequestFilterBlocks;
 
 lazy_static! {
     static ref LIST_ACCOUNT_SUBSCRIPTION: Mutex<DashMap<String, Vec<String>>> = Mutex::new(DashMap::new());
@@ -33,6 +32,7 @@ lazy_static! {
     static ref LIST_TOKEN_ACCOUNT_SUBSCRIPTION: Mutex<DashMap<String, Vec<String>>> = Mutex::new(DashMap::new());
     static ref SPINLOCK_REFRESH: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
     static ref SPINLOCK_REFRESH_MESSAGE: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+    static ref SPINLOCK_REFRESH_MESSAGE_OWNER: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
 }
 
 pub fn set_mutex_account_sub(sub_name: String, lst_vec: Vec<String>) {
@@ -76,6 +76,10 @@ pub fn get_mutex_token_sub(sub_name: String) -> Vec<String> {
 
 pub fn refresh() {
     SPINLOCK_REFRESH_MESSAGE.swap(1, Ordering::Relaxed);
+}
+
+pub fn refresh_owner() {
+    SPINLOCK_REFRESH_MESSAGE_OWNER.swap(1, Ordering::Relaxed);
 }
 
 pub fn exit_subscription() {
@@ -280,7 +284,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
         loop {
 
             log::info!("refresh subscription program_owner: {:?}", get_mutex_program_sub(sub_name_local_2.clone()).len());
-            SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed);
+            SPINLOCK_REFRESH_MESSAGE_OWNER.swap(0, Ordering::Relaxed);
 
             if SPINLOCK_REFRESH.swap(0, Ordering::Relaxed) == 1 {
                 break;
@@ -331,7 +335,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                     showlog = true;
                 }
 
-                if SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed) == 1 {
+                if SPINLOCK_REFRESH_MESSAGE_OWNER.swap(0, Ordering::Relaxed) == 1 {
                     break;
                 }
 

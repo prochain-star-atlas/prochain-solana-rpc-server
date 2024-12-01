@@ -575,7 +575,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                 if date_now.second() == 0 {
                     if showlog {
                         showlog = false;
-                        info!("[PERF] update from yellowstone rpc subscription by token owner, accounts: {}", counter_int);
+                        info!("[PERF] update from yellowstone rpc subscription by transaction, transactions: {}", counter_int);
                         counter_int = 0;
                     }
                 } else {
@@ -611,6 +611,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
                             }
                             Some(UpdateOneof::Transaction(trans)) => {
+                                counter_int = counter_int + 1;
 
                                 if trans.transaction.is_some() {
                                     let trans1 = trans.transaction.unwrap();

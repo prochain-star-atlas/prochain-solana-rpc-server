@@ -113,6 +113,8 @@ impl SolanaStateManager
         let blockheight_b: DashMap<String, u64> = DashMap::new();
 
         slot_a.insert(String::from("confirmed"), 0);
+        blockhash_b.insert(String::from("confirmed"), String::from(""));
+        blockheight_b.insert(String::from("confirmed"), 0);
 
         Self {
             state_account: Arc::new(state_a),
@@ -165,7 +167,7 @@ impl SolanaStateManager
         }
 
         return self.blockheight.get("confirmed").unwrap().value().clone();
-        
+
     }
 
     pub fn set_blockheight(&self, s: u64) {

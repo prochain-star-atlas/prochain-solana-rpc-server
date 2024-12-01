@@ -420,7 +420,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
         loop {
 
-            log::info!("refresh subscription token owner: {:?}", get_mutex_token_sub(sub_name_local_3.clone()));
+            log::info!("refresh subscription token owner: {:?}", get_mutex_token_sub(sub_name_local_3.clone()).len());
             SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed);
 
             if SPINLOCK_REFRESH.swap(0, Ordering::Relaxed) == 1 {
@@ -525,7 +525,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
         loop {
 
-            log::info!("refresh subscription token owner: {:?}", get_mutex_token_sub(sub_name_local_4.clone()));
+            log::info!("refresh subscription transaction: {:?}", get_mutex_transaction_sub(sub_name_local_4.clone()).len());
             SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed);
 
             if SPINLOCK_REFRESH.swap(0, Ordering::Relaxed) == 1 {
@@ -541,9 +541,9 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                 vote: Some(false),
                 failed: Some(false),
                 signature: None,
-                account_include: get_mutex_token_sub(sub_name_local_4.clone()),
+                account_include: get_mutex_transaction_sub(sub_name_local_4.clone()),
                 account_exclude: vec![],
-                account_required: get_mutex_token_sub(sub_name_local_4.clone()),
+                account_required: get_mutex_transaction_sub(sub_name_local_4.clone()),
             });
 
             let _res = subscribe_tx

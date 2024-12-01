@@ -120,6 +120,12 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
                 local_arc.add_account_info(acc.0, tt);
 
+                let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
+                if !vec_acc.contains(&acc.0.clone().to_string()) {
+                    vec_acc.push(acc.0.clone().to_string());
+                    crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
+                }
+
                 let mut data = count.lock();
                 *data += 1;
 
@@ -174,7 +180,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
         loop {
 
-            log::info!("refresh subscription accounts: {:?}", get_mutex_account_sub(sub_name_local.clone()));
+            log::info!("refresh subscription accounts: {:?}", get_mutex_account_sub(sub_name_local.clone()).len());
             SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed);
 
             if SPINLOCK_REFRESH.swap(0, Ordering::Relaxed) == 1 {
@@ -279,7 +285,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
         loop {
 
-            log::info!("refresh subscription program_owner: {:?}", get_mutex_program_sub(sub_name_local_2.clone()));
+            log::info!("refresh subscription program_owner: {:?}", get_mutex_program_sub(sub_name_local_2.clone()).len());
             SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed);
 
             if SPINLOCK_REFRESH.swap(0, Ordering::Relaxed) == 1 {

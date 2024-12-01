@@ -701,6 +701,12 @@ impl JsonRpcRequestProcessor {
                     account: ui_account,
                 };
                 ar_keyed_acc.push(aa);
+
+                let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
+                if !vec_acc.contains(&f.0.clone().to_string()) {
+                    vec_acc.push(f.0.clone().to_string());
+                    crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
+                }
             });
 
             //self.sol_state. (program_id.clone(), ar_pkey);
@@ -709,6 +715,7 @@ impl JsonRpcRequestProcessor {
             let v: Vec<_> = vec_acc.into_iter().unique().collect();
             crate::oracles::create_subscription_oracle::set_mutex_program_sub(String::from("sage"), v);
             crate::oracles::create_subscription_oracle::refresh();
+
         }
 
         Ok(ar_keyed_acc).map(|result| match c.clone().with_context.unwrap_or_default() {
@@ -904,6 +911,12 @@ impl JsonRpcRequestProcessor {
                 };
 
                 self.sol_state.add_account_info(pb, pca.clone());
+
+                let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
+                if !vec_acc.contains(&pb.clone().to_string()) {
+                    vec_acc.push(pb.clone().to_string());
+                    crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
+                }
             });
 
             let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_program_sub(String::from("sage"));

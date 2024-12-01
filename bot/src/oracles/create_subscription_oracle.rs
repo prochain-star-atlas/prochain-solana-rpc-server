@@ -87,12 +87,13 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
     let local_arc = state.clone();
     let sub_name_local = sub_name.clone();
-
+    
     let programs = get_mutex_program_sub(sub_name.clone());   
     programs.iter().for_each(|prog| {
         log::info!("starting processing program: {}", prog);
 
         let res = sol_client.get_program_accounts(&Pubkey::try_from(prog.as_str()).unwrap());   
+        let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
 
         if res.is_ok() {
 
@@ -119,11 +120,9 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                 };
 
                 local_arc.add_account_info(acc.0, tt);
-
-                let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
+                
                 if !vec_acc.contains(&acc.0.clone().to_string()) {
                     vec_acc.push(acc.0.clone().to_string());
-                    crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
                 }
 
                 let mut data = count.lock();
@@ -138,6 +137,8 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
             log::error!("error calling get_program_accounts: {}", res.err().unwrap());
         }       
 
+        crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
+        
         log::info!("finished processing program: {}", prog);
     }); 
 

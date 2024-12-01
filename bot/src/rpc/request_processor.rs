@@ -30,7 +30,7 @@ use spl_token_2022::{
     solana_program::program_pack::Pack,
     state::{Account as TokenAccount, Mint},
 };
-use solana_sdk::{commitment_config::CommitmentConfig, epoch_info::EpochInfo, stake::config, transaction::VersionedTransaction};
+use solana_sdk::{commitment_config::{CommitmentConfig, CommitmentLevel}, epoch_info::EpochInfo, stake::config, transaction::VersionedTransaction};
 use solana_sdk::pubkey::PUBKEY_BYTES;
 use itertools::Itertools;
 use solana_sdk::account::ReadableAccount;
@@ -1008,16 +1008,18 @@ impl JsonRpcRequestProcessor {
     pub async fn get_latest_blockhash(
         &self
     ) -> Result<Response<RpcBlockhash>>  {
-        info!("[MEMORY] get_latest_blockhash");
-        return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: self.sol_state.get_blockhash(), last_valid_block_height: self.sol_state.get_blockheight() }));
+        info!("[RPC] get_latest_blockhash");
+        let blockhash = self.sol_client.get_latest_blockhash_with_commitment(CommitmentConfig { commitment: CommitmentLevel::Confirmed }).unwrap();
+        return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: blockhash.0.to_string(), last_valid_block_height: blockhash.1 }));
     }
 
     pub async fn get_latest_blockhash_with_commitment(
         &self,
         commitment: CommitmentConfig
     ) -> Result<Response<RpcBlockhash>>  {
-        info!("[MEMORY] get_latest_blockhash");
-        return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: self.sol_state.get_blockhash(), last_valid_block_height: self.sol_state.get_blockheight() }));
+        info!("[RPC] get_latest_blockhash");
+        let blockhash = self.sol_client.get_latest_blockhash_with_commitment(CommitmentConfig { commitment: CommitmentLevel::Confirmed }).unwrap();
+        return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: blockhash.0.to_string(), last_valid_block_height: blockhash.1 }));
     }
 
     pub async fn send_transaction(

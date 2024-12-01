@@ -917,14 +917,14 @@ impl JsonRpcRequestProcessor {
                 crate::oracles::create_subscription_oracle::refresh_owner();
             }
 
-            let mut vec_acc_v = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
+            let mut vec_acc_v = crate::oracles::create_subscription_oracle::get_mutex_token_sub(String::from("sage"));
             let len_origin = vec_acc_v.len();
             vec_acc_v.append(&mut ar_pkey);
             let vec_acc_v_uniq: Vec<String> = vec_acc_v.into_iter().unique().collect();
 
             if len_origin != vec_acc_v_uniq.len() {
-                crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc_v_uniq);
-                crate::oracles::create_subscription_oracle::refresh();
+                crate::oracles::create_subscription_oracle::set_mutex_token_sub(String::from("sage"), vec_acc_v_uniq);
+                crate::oracles::create_subscription_oracle::refresh_tokenowner();
             }
 
             Ok(ar_results)
@@ -986,6 +986,13 @@ impl JsonRpcRequestProcessor {
             crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
             crate::oracles::create_subscription_oracle::refresh();
 
+            let mut vec_acc_v = crate::oracles::create_subscription_oracle::get_mutex_token_sub(String::from("sage"));
+            if !vec_acc_v.contains(&pk.clone().to_string()) {
+                vec_acc_v.push(pk.clone().to_string());
+                crate::oracles::create_subscription_oracle::set_mutex_token_sub(String::from("sage"), vec_acc_v);
+                crate::oracles::create_subscription_oracle::refresh_tokenowner();
+            }
+
         }
 
         Ok(RpcResponse {
@@ -1001,18 +1008,16 @@ impl JsonRpcRequestProcessor {
     pub async fn get_latest_blockhash(
         &self
     ) -> Result<Response<RpcBlockhash>>  {
-        info!("[RPC] get_latest_blockhash");
-        let r = self.sol_client.get_latest_blockhash().unwrap();
-        return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: r.to_string(), last_valid_block_height: 0 }));
+        info!("[MEMORY] get_latest_blockhash");
+        return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: self.sol_state.get_blockhash(), last_valid_block_height: self.sol_state.get_blockheight() }));
     }
 
     pub async fn get_latest_blockhash_with_commitment(
         &self,
         commitment: CommitmentConfig
     ) -> Result<Response<RpcBlockhash>>  {
-        info!("[RPC] get_latest_blockhash");
-        let r = self.sol_client.get_latest_blockhash_with_commitment(commitment).unwrap();
-        return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: r.0.to_string(), last_valid_block_height: r.1 }));
+        info!("[MEMORY] get_latest_blockhash");
+        return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: self.sol_state.get_blockhash(), last_valid_block_height: self.sol_state.get_blockheight() }));
     }
 
     pub async fn send_transaction(

@@ -88,6 +88,8 @@ pub type StateSpace = DashMap<Pubkey, ProchainAccountInfo>;
 pub type StateOwnerSpace = DashMap<Pubkey, Vec<Pubkey>>;
 pub type StateProgramOwnerSpace = DashMap<Pubkey, Vec<Pubkey>>;
 pub type SlotSpace = DashMap<String, u64>;
+pub type BlockhashSpace = DashMap<String, String>;
+pub type BlockHeightSpace = DashMap<String, u64>;
 
 #[derive(Clone)]
 pub struct SolanaStateManager {
@@ -95,6 +97,8 @@ pub struct SolanaStateManager {
     state_owner: Arc<StateOwnerSpace>,
     state_program_owner: Arc<StateProgramOwnerSpace>,
     slot: Arc<SlotSpace>,
+    blockhash: Arc<BlockhashSpace>,
+    blockheight: Arc<BlockHeightSpace>,
     sol_client: Arc<RpcClient>
 }
 
@@ -105,6 +109,8 @@ impl SolanaStateManager
         let state_o: DashMap<Pubkey, Vec<Pubkey>> = DashMap::new();
         let state_p: DashMap<Pubkey, Vec<Pubkey>> = DashMap::new();
         let slot_a: DashMap<String, u64> = DashMap::new();
+        let blockhash_b: DashMap<String, String> = DashMap::new();
+        let blockheight_b: DashMap<String, u64> = DashMap::new();
 
         slot_a.insert(String::from("confirmed"), 0);
 
@@ -113,6 +119,8 @@ impl SolanaStateManager
             state_owner: Arc::new(state_o),
             state_program_owner: Arc::new(state_p),
             slot: Arc::new(slot_a),
+            blockhash: Arc::new(blockhash_b),
+            blockheight: Arc::new(blockheight_b),
             sol_client: sol_client
         }
     }
@@ -136,6 +144,32 @@ impl SolanaStateManager
 
     pub fn set_slot(&self, s: u64) {
         self.slot.alter(&String::from("confirmed"), |k, v| {
+            return s;
+        });
+    }
+
+    pub fn get_blockhash(&self) -> String {
+        return self.blockhash.get("confirmed").unwrap().value().clone();
+    }
+
+    pub fn set_blockhash(&self, s: String) {
+        self.blockhash.alter(&String::from("confirmed"), |k, v| {
+            return s;
+        });
+    }
+
+    pub fn get_blockheight(&self) -> u64 {
+
+        if !self.blockheight.contains_key("confirmed") {
+            return 0;
+        }
+
+        return self.blockheight.get("confirmed").unwrap().value().clone();
+        
+    }
+
+    pub fn set_blockheight(&self, s: u64) {
+        self.blockheight.alter(&String::from("confirmed"), |k, v| {
             return s;
         });
     }

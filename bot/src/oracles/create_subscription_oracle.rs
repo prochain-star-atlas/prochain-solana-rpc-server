@@ -33,6 +33,7 @@ lazy_static! {
     static ref SPINLOCK_REFRESH: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
     static ref SPINLOCK_REFRESH_MESSAGE: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
     static ref SPINLOCK_REFRESH_MESSAGE_OWNER: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+    static ref SPINLOCK_REFRESH_MESSAGE_TOKENOWNER: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
 }
 
 pub fn set_mutex_account_sub(sub_name: String, lst_vec: Vec<String>) {
@@ -80,6 +81,10 @@ pub fn refresh() {
 
 pub fn refresh_owner() {
     SPINLOCK_REFRESH_MESSAGE_OWNER.swap(1, Ordering::Relaxed);
+}
+
+pub fn refresh_tokenowner() {
+    SPINLOCK_REFRESH_MESSAGE_TOKENOWNER.swap(1, Ordering::Relaxed);
 }
 
 pub fn exit_subscription() {
@@ -251,7 +256,13 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                                 }
                             }
                             Some(UpdateOneof::BlockMeta(blockmeta)) => {
+
                                 local_arc.set_slot(blockmeta.slot);
+                                local_arc.set_blockhash(blockmeta.blockhash);
+                                if blockmeta.block_height.is_some() {
+                                    local_arc.set_blockheight(blockmeta.block_height.unwrap().block_height);
+                                }
+
                             }
                             Some(UpdateOneof::Block(block)) => {
                                 block.accounts.iter().filter(|p| p.lamports == 0).for_each(|p| {
@@ -354,7 +365,14 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                                 }
                             }
                             Some(UpdateOneof::BlockMeta(block)) => {
+
                                 local_arc_2.set_slot(block.slot);
+                                local_arc_2.set_blockhash(block.blockhash);
+
+                                if block.block_height.is_some() {
+                                    local_arc_2.set_blockheight(block.block_height.unwrap().block_height);
+                                }
+
                             }
                             _ => {}
                         }
@@ -374,99 +392,110 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
     });
 
-    // let sub_name_local_3 = sub_name.clone();
-    // let local_arc_3 = state.clone();
+    let sub_name_local_3 = sub_name.clone();
+    let local_arc_3 = state.clone();
 
-    // let _3 = tokio::spawn(async move {
+    let _3 = tokio::spawn(async move {
 
-    //     loop {
+        loop {
 
-    //         log::info!("refresh subscription token owner: {:?}", get_mutex_token_sub(sub_name_local_3.clone()));
-    //         SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed);
+            log::info!("refresh subscription token owner: {:?}", get_mutex_token_sub(sub_name_local_3.clone()));
+            SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed);
 
-    //         if SPINLOCK_REFRESH.swap(0, Ordering::Relaxed) == 1 {
-    //             break;
-    //         }
+            if SPINLOCK_REFRESH.swap(0, Ordering::Relaxed) == 1 {
+                break;
+            }
             
-    //         let mut client = GeyserGrpcClient::build_from_shared(String::from("http://192.168.100.98:10000")).unwrap().connect().await.unwrap();
+            let mut client = GeyserGrpcClient::build_from_shared(String::from("http://192.168.100.98:10000")).unwrap().connect().await.unwrap();
 
-    //         let (mut subscribe_tx, mut stream) = client.subscribe().await.unwrap();           
+            let (mut subscribe_tx, mut stream) = client.subscribe().await.unwrap();           
 
-    //         let mut hp = HashMap::new();
-    //         hp.insert(sub_name_local_3.clone() + "_token", SubscribeRequestFilterAccounts {
-    //             account: get_mutex_token_sub(sub_name_local_3.clone()),
-    //             owner: vec![String::from_str("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA").unwrap()],
-    //             filters: vec![],
-    //         });
+            let mut hp = HashMap::new();
+            hp.insert(sub_name_local_3.clone() + "_token", SubscribeRequestFilterAccounts {
+                account: get_mutex_token_sub(sub_name_local_3.clone()),
+                owner: vec![String::from_str("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA").unwrap()],
+                filters: vec![],
+            });
 
-    //         let _res = subscribe_tx
-    //             .send(SubscribeRequest {
-    //                 slots: HashMap::new(),
-    //                 accounts: hp,
-    //                 transactions: HashMap::new(),
-    //                 transactions_status: HashMap::new(),
-    //                 entry: HashMap::new(),
-    //                 blocks: HashMap::new(),
-    //                 blocks_meta: hashmap! { "".to_owned() => SubscribeRequestFilterBlocksMeta {} },
-    //                 commitment: Some(1 as i32),
-    //                 accounts_data_slice: vec![],
-    //                 ping: None,
-    //             })
-    //             .await;
+            let _res = subscribe_tx
+                .send(SubscribeRequest {
+                    slots: HashMap::new(),
+                    accounts: hp,
+                    transactions: HashMap::new(),
+                    transactions_status: HashMap::new(),
+                    entry: HashMap::new(),
+                    blocks: HashMap::new(),
+                    blocks_meta: hashmap! { "".to_owned() => SubscribeRequestFilterBlocksMeta {} },
+                    commitment: Some(1 as i32),
+                    accounts_data_slice: vec![],
+                    ping: None,
+                })
+                .await;
 
-    //         _res.unwrap();
+            _res.unwrap();
 
-    //         let mut counter_int = 0;
-    //         let mut showlog = false;
+            let mut counter_int = 0;
+            let mut showlog = false;
 
-    //         while let Some(message) = stream.next().await {
+            while let Some(message) = stream.next().await {
 
-    //             let date_now = chrono::offset::Utc::now();
+                let date_now = chrono::offset::Utc::now();
 
-    //             if date_now.second() == 0 {
-    //                 if showlog {
-    //                     showlog = false;
-    //                     info!("[PERF] update from yellowstone rpc subscription by token owner, accounts: {}", counter_int);
-    //                     counter_int = 0;
-    //                 }
-    //             } else {
-    //                 showlog = true;
-    //             }
+                if date_now.second() == 0 {
+                    if showlog {
+                        showlog = false;
+                        info!("[PERF] update from yellowstone rpc subscription by token owner, accounts: {}", counter_int);
+                        counter_int = 0;
+                    }
+                } else {
+                    showlog = true;
+                }
 
-    //             if SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed) == 1 {
-    //                 break;
-    //             }
+                if SPINLOCK_REFRESH_MESSAGE_TOKENOWNER.swap(0, Ordering::Relaxed) == 1 {
+                    break;
+                }
 
-    //             match message {
-    //                 Ok(msg) => {
-    //                     match msg.update_oneof {
-    //                         Some(UpdateOneof::Account(tx)) => {
-    //                             counter_int = counter_int + 1;
+                match message {
+                    Ok(msg) => {
+                        match msg.update_oneof {
+                            Some(UpdateOneof::Account(tx)) => {
+                                counter_int = counter_int + 1;
 
-    //                             if let Some(acc) = tx.account {
-    //                                 local_arc_3.handle_account_update(acc);
-    //                             }
-    //                         }
-    //                         Some(UpdateOneof::BlockMeta(block)) => {
-    //                             local_arc_3.set_slot(block.slot);
-    //                         }
-    //                         _ => {}
-    //                     }
-    //                 }
-    //                 Err(error) => {
-    //                     error!("stream error: {error:?}");
-    //                     break;
-    //                 }
-    //             }
+                                if let Some(acc) = tx.account {
+                                    if acc.lamports == 0 {
+                                        local_arc_3.clean_zero_account(Pubkey::from_str(String::from_utf8(acc.pubkey.clone()).unwrap_or_default().as_str()).unwrap_or_default());
+                                    } else {
+                                        local_arc_3.handle_account_update(acc);
+                                    }
+                                }
+                            }
+                            Some(UpdateOneof::BlockMeta(block)) => {
+
+                                local_arc_3.set_slot(block.slot);
+                                local_arc_3.set_blockhash(block.blockhash);
+
+                                if block.block_height.is_some() {
+                                    local_arc_3.set_blockheight(block.block_height.unwrap().block_height);
+                                }
+
+                            }
+                            _ => {}
+                        }
+                    }
+                    Err(error) => {
+                        error!("stream error: {error:?}");
+                        break;
+                    }
+                }
             
-    //         }
+            }
 
-    //         let _1 = subscribe_tx.close().await.unwrap();
-    //         info!("closing yellowstone subscription for token owner ...");
+            let _1 = subscribe_tx.close().await.unwrap();
+            info!("closing yellowstone subscription for token owner ...");
 
-    //     } // end of loop
+        } // end of loop
 
-    // });
+    });
 
     let _set_j = vec![_1, _2];
 

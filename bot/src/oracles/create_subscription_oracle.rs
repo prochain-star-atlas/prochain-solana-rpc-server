@@ -25,7 +25,7 @@ use dashmap::DashMap;
 use solana_client::{rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig}};
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey, signer::Signer};
 use tracing::info;
-use yellowstone_grpc_proto::geyser::SubscribeRequestFilterTransactions;
+use yellowstone_grpc_proto::geyser::{subscribe_request_filter_accounts_filter::Filter, subscribe_request_filter_accounts_filter_lamports::Cmp, SubscribeRequestFilterAccountsFilter, SubscribeRequestFilterAccountsFilterLamports, SubscribeRequestFilterTransactions};
 use hashbrown::HashSet;
 
 lazy_static! {
@@ -220,6 +220,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                 account: get_mutex_account_sub(sub_name_local.clone()),
                 owner: vec![],
                 filters: vec![],
+                nonempty_txn_signature: None
             });
 
             let _res = subscribe_tx
@@ -331,6 +332,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                 account: vec![],
                 owner: get_mutex_program_sub(sub_name_local_2.clone()),
                 filters: vec![],
+                nonempty_txn_signature: None
             });
 
             let _res = subscribe_tx
@@ -436,6 +438,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                 account: get_mutex_token_sub(sub_name_local_3.clone()),
                 owner: vec![],
                 filters: vec![],
+                nonempty_txn_signature: None
             });
 
             let _res = subscribe_tx
@@ -678,6 +681,119 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
             let _1 = subscribe_tx.close().await.unwrap();
             info!("closing yellowstone subscription for transaction ...");
+
+        } // end of loop
+
+    });
+
+    let sub_name_local_5 = sub_name.clone();
+    let local_arc_5 = state.clone();
+
+    let _5 = tokio::spawn(async move {
+
+        loop {
+
+            log::info!("refresh subscription token owner lamport");
+            SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed);
+
+            if SPINLOCK_REFRESH.swap(0, Ordering::Relaxed) == 1 {
+                break;
+            }
+            
+            let mut client = GeyserGrpcClient::build_from_shared(String::from("http://192.168.100.98:10000")).unwrap().connect().await.unwrap();
+
+            let (mut subscribe_tx, mut stream) = client.subscribe().await.unwrap();           
+
+            let mut token_arr = get_mutex_token_sub(sub_name_local_5.clone());
+            let mut account_arr = get_mutex_account_sub(sub_name_local_5.clone());
+            let mut program_arr = get_mutex_program_sub(sub_name_local_5.clone());
+
+            let mut ar_owner = vec![String::from("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")];
+            ar_owner.append(&mut program_arr);
+
+            let mut ar_acc: Vec<String> = vec![];
+            ar_acc.append(&mut token_arr);
+            ar_acc.append(&mut account_arr);
+
+            let mut hp = HashMap::new();
+            hp.insert(sub_name_local_5.clone() + "_token", SubscribeRequestFilterAccounts {
+                account: ar_acc,
+                owner: ar_owner,
+                filters: vec![SubscribeRequestFilterAccountsFilter { filter: Some(Filter::Lamports(SubscribeRequestFilterAccountsFilterLamports { cmp: Some(Cmp::Eq(0)) })) }],
+                nonempty_txn_signature: None
+            });
+
+            let _res = subscribe_tx
+                .send(SubscribeRequest {
+                    slots: HashMap::new(),
+                    accounts: hp,
+                    transactions: HashMap::new(),
+                    transactions_status: HashMap::new(),
+                    entry: HashMap::new(),
+                    blocks: HashMap::new(),
+                    blocks_meta: HashMap::new(),
+                    commitment: Some(1 as i32),
+                    accounts_data_slice: vec![],
+                    ping: None,
+                })
+                .await;
+
+            _res.unwrap();
+
+            let mut counter_int = 0;
+            let mut showlog = false;
+
+            while let Some(message) = stream.next().await {
+
+                let date_now = chrono::offset::Utc::now();
+
+                if date_now.second() == 0 {
+                    if showlog {
+                        showlog = false;
+                        info!("[PERF] update from yellowstone rpc subscription by token lamport null, accounts: {}", counter_int);
+                        counter_int = 0;
+                    }
+                } else {
+                    showlog = true;
+                }
+
+                if SPINLOCK_REFRESH_MESSAGE_TOKENOWNER.swap(0, Ordering::Relaxed) == 1 {
+                    break;
+                }
+
+                if SPINLOCK_REFRESH_MESSAGE_OWNER.swap(0, Ordering::Relaxed) == 1 {
+                    break;
+                }
+
+                if SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed) == 1 {
+                    break;
+                }
+
+                match message {
+                    Ok(msg) => {
+                        match msg.update_oneof {
+                            Some(UpdateOneof::Account(tx)) => {
+                                counter_int = counter_int + 1;
+
+                                if let Some(acc) = tx.account {
+                                    if acc.lamports == 0 {
+                                        local_arc_5.clean_zero_account(Pubkey::from_str(String::from_utf8(acc.pubkey.clone()).unwrap_or_default().as_str()).unwrap_or_default());
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    Err(error) => {
+                        error!("stream error: {error:?}");
+                        break;
+                    }
+                }
+            
+            }
+
+            let _1 = subscribe_tx.close().await.unwrap();
+            info!("closing yellowstone subscription for token lamport null ...");
 
         } // end of loop
 

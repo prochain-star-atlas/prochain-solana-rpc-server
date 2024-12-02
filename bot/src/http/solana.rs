@@ -84,10 +84,21 @@ async fn get_solana_cached_close_acount(addr: Path<String>) -> impl Responder {
 
     let pk = Pubkey::try_from(addr.to_string().as_str()).unwrap();
     let state = crate::solana_state::get_solana_state();
-    let acc = state.get_account_info(pk).unwrap().unwrap();
+    let acc = state.get_account_info(pk);
+    
+    if acc.is_some() {
+        let acc_opt = acc.unwrap();
 
-    if acc.lamports > 0 {
-        state.clean_zero_account(pk);
+        if acc_opt.is_ok() {
+
+            let res_acc = acc_opt.unwrap();
+
+            if res_acc.lamports > 0 {
+                state.clean_zero_account(pk);
+            }
+
+        }
+
     }
 
     HttpResponse::Ok().json(true)
@@ -107,20 +118,25 @@ async fn get_solana_cached_refresh_acount(addr: Path<String>) -> impl Responder 
     let sol_client = solana_client::nonblocking::rpc_client::RpcClient::new_with_timeout_and_commitment(String::from("http://192.168.100.98:18899"), Duration::from_secs(240), CommitmentConfig::confirmed());
     let state = crate::solana_state::get_solana_state();
 
-    let res_simple_account = sol_client.get_account(&pk.clone()).await.unwrap();
+    let res_simple_account = sol_client.get_account(&pk.clone()).await;
 
-    state.add_account_info(pk.clone(), ProchainAccountInfo {
-        data: res_simple_account.data.clone(),
-        executable: res_simple_account.executable,
-        lamports: res_simple_account.lamports,
-        owner: Pubkey::try_from(res_simple_account.owner.to_bytes().to_vec()).unwrap(),
-        pubkey: pk.clone(),
-        rent_epoch: res_simple_account.rent_epoch,
-        slot: 0,
-        txn_signature: None,
-        write_version: 0,
-        last_update: chrono::offset::Utc::now()
-    });
+    if res_simple_account.is_ok() {
+
+        let res1 = res_simple_account.unwrap();
+
+        state.add_account_info(pk.clone(), ProchainAccountInfo {
+            data: res1.data.clone(),
+            executable: res1.executable,
+            lamports: res1.lamports,
+            owner: Pubkey::try_from(res1.owner.to_bytes().to_vec()).unwrap(),
+            pubkey: pk.clone(),
+            rent_epoch: res1.rent_epoch,
+            slot: 0,
+            txn_signature: None,
+            write_version: 0,
+            last_update: chrono::offset::Utc::now()
+        });
+    }
 
     HttpResponse::Ok().json(true)
 
@@ -348,6 +364,7 @@ async fn get_solana_cached_subscription_account(account: Path<String>) -> impl R
         state.add_account_info(pubkey.clone(), pa.clone());
         let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
         if !vec_acc.contains(&account.to_string()) {
+
             vec_acc.push(pubkey.to_string());
             state.add_account_info(pubkey.clone(), pa.clone());
             crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);

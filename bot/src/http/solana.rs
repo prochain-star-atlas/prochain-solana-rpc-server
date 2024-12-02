@@ -80,7 +80,7 @@ async fn get_solana_cached_subscription_owner(owner: Path<String>) -> impl Respo
 
     let state = crate::solana_state::get_solana_state();
     let pubkey_owner = Pubkey::try_from(owner.to_string().as_str()).unwrap();
-    let sol_client = RpcClient::new_with_timeout_and_commitment("http://192.168.100.98:18899", Duration::from_secs(240), CommitmentConfig::confirmed());
+    let sol_client = state.get_sol_client();
     let config = RpcProgramAccountsConfig { filters: None, account_config: RpcAccountInfoConfig { encoding: None, data_slice: None, commitment: Some(CommitmentConfig { commitment: CommitmentLevel::Confirmed }), min_context_slot: None }, with_context: None, sort_results: None };
 
     let res = sol_client.get_program_accounts_with_config(&pubkey_owner, config.clone());       
@@ -134,7 +134,7 @@ async fn get_solana_cached_subscription_tokenowner(tokenowner: Path<String>) -> 
 
     let pb_owner = Pubkey::try_from(tokenowner.as_str()).unwrap();  
     let state = crate::solana_state::get_solana_state();
-    let sol_client = RpcClient::new_with_timeout_and_commitment("http://192.168.100.98:18899", Duration::from_secs(240), CommitmentConfig::confirmed());
+    let sol_client = state.get_sol_client();
 
     let res_rpc: RpcResult<Vec<RpcKeyedAccount>> = sol_client.send(
         RpcRequest::GetTokenAccountsByOwner,
@@ -218,7 +218,7 @@ async fn get_solana_cached_subscription_token_account(account: Path<String>) -> 
 
     let pb_token = Pubkey::try_from(account.as_str()).unwrap();  
     let state = crate::solana_state::get_solana_state();
-    let sol_client = RpcClient::new_with_timeout_and_commitment("http://192.168.100.98:18899", Duration::from_secs(240), CommitmentConfig::confirmed());
+    let sol_client = state.get_sol_client();
     
     let acc_raw = sol_client.get_account(&pb_token).unwrap();       
 
@@ -270,7 +270,7 @@ async fn get_solana_cached_subscription_account(account: Path<String>) -> impl R
 
     let state = crate::solana_state::get_solana_state();
     let pubkey = Pubkey::try_from(account.to_string().as_str()).unwrap();
-    let sol_client = RpcClient::new_with_timeout_and_commitment("http://192.168.100.98:18899", Duration::from_secs(240), CommitmentConfig::confirmed());
+    let sol_client = state.get_sol_client();
     let res = sol_client.get_account_with_config(&pubkey, config).unwrap();
 
     let acc_pk = res.value.clone().unwrap_or_default();

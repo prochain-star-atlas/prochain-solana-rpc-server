@@ -28,7 +28,7 @@ const API_KEY: &str = "utoipa-rocks";
 pub fn start_httpd() {
 
 
-    let _1 = std::thread::spawn(move || {
+    let _1 = tokio::spawn(async move {
     
         let _t = start_internal_httpd().is_ok();
 
@@ -36,7 +36,7 @@ pub fn start_httpd() {
 
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn start_internal_httpd() -> Result<(), impl Error> {
     //env_logger::init();
 

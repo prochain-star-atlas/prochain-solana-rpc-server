@@ -32,12 +32,11 @@ lazy_static! {
     static ref LIST_ACCOUNT_SUBSCRIPTION: Mutex<DashMap<String, Vec<String>>> = Mutex::new(DashMap::new());
     static ref LIST_PROGRAM_ACCOUNT_SUBSCRIPTION: Mutex<DashMap<String, Vec<String>>> = Mutex::new(DashMap::new());
     static ref LIST_TOKEN_ACCOUNT_SUBSCRIPTION: Mutex<DashMap<String, Vec<String>>> = Mutex::new(DashMap::new());
-    static ref LIST_TRANSACTION_SUBSCRIPTION: Mutex<DashMap<String, Vec<String>>> = Mutex::new(DashMap::new());
+    static ref LIST_TOKEN_OWNER_ACCOUNT_SUBSCRIPTION: Mutex<DashMap<String, Vec<String>>> = Mutex::new(DashMap::new());
     static ref SPINLOCK_REFRESH: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
     static ref SPINLOCK_REFRESH_MESSAGE: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
     static ref SPINLOCK_REFRESH_MESSAGE_OWNER: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
     static ref SPINLOCK_REFRESH_MESSAGE_TOKENOWNER: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
-    static ref SPINLOCK_REFRESH_MESSAGE_TRANSACTION: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
 }
 
 pub fn set_mutex_account_sub(sub_name: String, lst_vec: Vec<String>) {
@@ -79,12 +78,12 @@ pub fn get_mutex_token_sub(sub_name: String) -> Vec<String> {
     }
 }
 
-pub fn set_mutex_transaction_sub(sub_name: String, lst_vec: Vec<String>) {
-    LIST_TRANSACTION_SUBSCRIPTION.lock().insert(sub_name, lst_vec);
+pub fn set_mutex_token_owner_sub(sub_name: String, lst_vec: Vec<String>) {
+    LIST_TOKEN_OWNER_ACCOUNT_SUBSCRIPTION.lock().insert(sub_name, lst_vec);
 }
 
-pub fn get_mutex_transaction_sub(sub_name: String) -> Vec<String> {
-    let map = LIST_TRANSACTION_SUBSCRIPTION.lock();
+pub fn get_mutex_token_owner_sub(sub_name: String) -> Vec<String> {
+    let map = LIST_TOKEN_OWNER_ACCOUNT_SUBSCRIPTION.lock();
     let val0 = map.get(&sub_name);
     match val0 {
         None => { return vec![]; },
@@ -102,10 +101,6 @@ pub fn refresh_owner() {
 
 pub fn refresh_tokenowner() {
     SPINLOCK_REFRESH_MESSAGE_TOKENOWNER.swap(1, Ordering::Relaxed);
-}
-
-pub fn refresh_transaction() {
-    SPINLOCK_REFRESH_MESSAGE_TRANSACTION.swap(1, Ordering::Relaxed);
 }
 
 pub fn exit_subscription() {
@@ -436,7 +431,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
             let mut hp = HashMap::new();
             hp.insert(sub_name_local_3.clone() + "_token", SubscribeRequestFilterAccounts {
                 account: get_mutex_token_sub(sub_name_local_3.clone()),
-                owner: vec![],
+                owner: get_mutex_token_owner_sub(sub_name_local_3.clone()),
                 filters: vec![],
                 nonempty_txn_signature: None
             });
@@ -516,171 +511,6 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
             let _1 = subscribe_tx.close().await.unwrap();
             info!("closing yellowstone subscription for token owner ...");
-
-        } // end of loop
-
-    });
-
-    let sub_name_local_4 = sub_name.clone();
-    let local_arc_4 = state.clone();
-
-    let _4 = tokio::spawn(async move {
-
-        loop {
-
-            log::info!("refresh subscription transaction: {:?}", get_mutex_transaction_sub(sub_name_local_4.clone()).len());
-            SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed);
-
-            if SPINLOCK_REFRESH.swap(0, Ordering::Relaxed) == 1 {
-                break;
-            }
-            
-            let mut client = GeyserGrpcClient::build_from_shared(String::from("http://192.168.100.98:10000")).unwrap().connect().await.unwrap();
-
-            let (mut subscribe_tx, mut stream) = client.subscribe().await.unwrap();           
-
-            let mut hp: HashMap<String, SubscribeRequestFilterTransactions> = HashMap::new();
-            hp.insert(sub_name_local_4.clone() + "_transaction", SubscribeRequestFilterTransactions {
-                vote: Some(false),
-                failed: Some(false),
-                signature: None,
-                account_include: get_mutex_transaction_sub(sub_name_local_4.clone()),
-                account_exclude: vec![],
-                account_required: vec![],
-            });
-
-            let _res = subscribe_tx
-                .send(SubscribeRequest {
-                    slots: HashMap::new(),
-                    accounts: HashMap::new(),
-                    transactions: hp,
-                    transactions_status: HashMap::new(),
-                    entry: HashMap::new(),
-                    blocks: HashMap::new(),
-                    blocks_meta: hashmap! { "".to_owned() => SubscribeRequestFilterBlocksMeta {} },
-                    commitment: Some(1 as i32),
-                    accounts_data_slice: vec![],
-                    ping: None,
-                })
-                .await;
-
-            _res.unwrap();
-
-            let mut counter_int = 0;
-            let mut showlog = false;
-
-            let owner_programs = get_mutex_program_sub(String::from_str("sage").unwrap());
-
-            while let Some(message) = stream.next().await {
-
-                let date_now = chrono::offset::Utc::now();
-
-                if date_now.second() == 0 {
-                    if showlog {
-                        showlog = false;
-                        info!("[PERF] update from yellowstone rpc subscription by transaction, transactions: {}", counter_int);
-                        counter_int = 0;
-                    }
-                } else {
-                    showlog = true;
-                }
-
-                if SPINLOCK_REFRESH_MESSAGE_TRANSACTION.swap(0, Ordering::Relaxed) == 1 {
-                    break;
-                }
-
-                match message {
-                    Ok(msg) => {
-                        match msg.update_oneof {
-                            Some(UpdateOneof::Account(tx)) => {
-                                counter_int = counter_int + 1;
-
-                                if let Some(acc) = tx.account {
-                                    if acc.lamports == 0 {
-                                        local_arc_4.clean_zero_account(Pubkey::from_str(String::from_utf8(acc.pubkey.clone()).unwrap_or_default().as_str()).unwrap_or_default());
-                                    } else {
-                                        local_arc_4.handle_account_update(acc);
-                                    }
-                                }
-                            }
-                            Some(UpdateOneof::BlockMeta(block)) => {
-
-                                local_arc_4.set_slot(block.slot);
-                                local_arc_4.set_blockhash(block.blockhash);
-
-                                if block.block_height.is_some() {
-                                    local_arc_4.set_blockheight(block.block_height.unwrap().block_height);
-                                }
-
-                            }
-                            Some(UpdateOneof::Transaction(trans)) => {
-                                counter_int = counter_int + 1;
-
-                                if trans.transaction.is_some() {
-                                    let trans1 = trans.transaction.unwrap();
-                                    if trans1.transaction.is_some() {
-                                        let trans2 = trans1.transaction.unwrap();
-
-                                        if trans2.message.is_some() {
-
-                                            let mess1 = trans2.message.unwrap();
-
-                                            let keys: Vec<String> = mess1.account_keys.iter().map(|p| String::from_utf8(p.clone()).unwrap_or_default()).collect();
-
-                                            if intersection(vec![keys.clone(), owner_programs.clone()]).len() > 0 {
-
-                                                keys.clone().iter().for_each(|p| {
-
-                                                    let pk = Pubkey::from_str(p.as_str()).unwrap_or_default();
-                                                    let res = sol_client.get_account(&pk);
-
-                                                    if res.is_ok() {
-
-                                                        let acc1 = res.unwrap();
-
-                                                        let pa = ProchainAccountInfo {
-                                                            data: acc1.data,
-                                                            executable: acc1.executable,
-                                                            lamports: acc1.lamports,
-                                                            owner: Pubkey::try_from(acc1.owner).unwrap(),
-                                                            pubkey: pk.clone(),
-                                                            rent_epoch: acc1.rent_epoch,
-                                                            slot: 0,
-                                                            txn_signature: None,
-                                                            write_version: 0,
-                                                            last_update: chrono::offset::Utc::now()
-                                                        };
-    
-                                                        local_arc_4.add_account_info(pk, pa.clone());
-
-                                                        if pa.clone().lamports == 0 {
-                                                            local_arc_4.clean_zero_account(pk);
-                                                        }
-
-                                                    }                                                    
-
-                                                });
-
-                                            }
-
-                                        }
-                                    }
-                                }
-
-                            }
-                            _ => {}
-                        }
-                    }
-                    Err(error) => {
-                        error!("stream error: {error:?}");
-                        break;
-                    }
-                }
-            
-            }
-
-            let _1 = subscribe_tx.close().await.unwrap();
-            info!("closing yellowstone subscription for transaction ...");
 
         } // end of loop
 

@@ -12,7 +12,7 @@ use {
     }, std::sync::Arc
 };
 use bincode::Options;
-use solana_client::{rpc_client::SerializableTransaction, rpc_config::{RpcBlockConfig, RpcEncodingConfigWrapper, RpcEpochConfig, RpcSendTransactionConfig, RpcTransactionConfig}, rpc_filter::Memcmp, rpc_request::TokenAccountsFilter};
+use solana_client::{rpc_config::{RpcEncodingConfigWrapper, RpcEpochConfig, RpcSendTransactionConfig, RpcTransactionConfig}, rpc_filter::Memcmp, rpc_request::TokenAccountsFilter};
 use jsonrpc_core::{types::error, types::Error};
 use solana_inline_spl::{
     token::{SPL_TOKEN_ACCOUNT_MINT_OFFSET, SPL_TOKEN_ACCOUNT_OWNER_OFFSET},
@@ -37,7 +37,6 @@ use solana_sdk::account::ReadableAccount;
 type RpcCustomResult<T> = std::result::Result<T, RpcCustomError>;
 
 use solana_inline_spl::{token::GenericTokenAccount, token_2022::Account};
-use solana_sdk::hash::Hash;
 use solana_sdk::signature::Signature;
 use base64::Engine;
 use std::any::type_name;
@@ -777,10 +776,18 @@ impl JsonRpcRequestProcessor {
                 write_version: 0,
                 last_update: chrono::offset::Utc::now()
             });
-            let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
-            vec_acc.push(pk.to_string());
-            crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
-            crate::oracles::create_subscription_oracle::refresh();
+
+            // let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
+            // vec_acc.push(pk.to_string());
+            // crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
+            // crate::oracles::create_subscription_oracle::refresh();
+
+            let mut vec_acc_v = crate::oracles::create_subscription_oracle::get_mutex_token_sub(String::from("sage"));
+            if !vec_acc_v.contains(&pk.clone().to_string()) {
+                vec_acc_v.push(pk.clone().to_string());
+                crate::oracles::create_subscription_oracle::set_mutex_token_sub(String::from("sage"), vec_acc_v);
+                crate::oracles::create_subscription_oracle::refresh_tokenowner();
+            }
 
         }
 
@@ -917,14 +924,6 @@ impl JsonRpcRequestProcessor {
                 crate::oracles::create_subscription_oracle::refresh_owner();
             }
 
-            let mut vec_token_trans = crate::oracles::create_subscription_oracle::get_mutex_transaction_sub(String::from("sage"));
-            if !vec_token_trans.contains(&program_id_str.clone()) {
-                vec_token_trans.push(program_id_str.clone());
-
-                crate::oracles::create_subscription_oracle::set_mutex_transaction_sub(String::from("sage"), vec_token_trans);
-                crate::oracles::create_subscription_oracle::refresh_transaction();
-            }
-
             let mut vec_acc_v = crate::oracles::create_subscription_oracle::get_mutex_token_sub(String::from("sage"));
             let len_origin = vec_acc_v.len();
             vec_acc_v.append(&mut ar_pkey);
@@ -932,6 +931,13 @@ impl JsonRpcRequestProcessor {
 
             if len_origin != vec_acc_v_uniq.len() {
                 crate::oracles::create_subscription_oracle::set_mutex_token_sub(String::from("sage"), vec_acc_v_uniq);
+                crate::oracles::create_subscription_oracle::refresh_tokenowner();
+            }
+
+            let mut vec_acc_o = crate::oracles::create_subscription_oracle::get_mutex_token_sub(String::from("sage"));
+            if !vec_acc_o.contains(&program_id_str) {
+                vec_acc_o.push(program_id_str);
+                crate::oracles::create_subscription_oracle::set_mutex_token_owner_sub(String::from("sage"), vec_acc_o);
                 crate::oracles::create_subscription_oracle::refresh_tokenowner();
             }
 
@@ -989,10 +995,11 @@ impl JsonRpcRequestProcessor {
                 write_version: 0,
                 last_update: chrono::offset::Utc::now()
             });
-            let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
-            vec_acc.push(pk.to_string());
-            crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
-            crate::oracles::create_subscription_oracle::refresh();
+
+            // let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
+            // vec_acc.push(pk.to_string());
+            // crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
+            // crate::oracles::create_subscription_oracle::refresh();
 
             let mut vec_acc_v = crate::oracles::create_subscription_oracle::get_mutex_token_sub(String::from("sage"));
             if !vec_acc_v.contains(&pk.clone().to_string()) {

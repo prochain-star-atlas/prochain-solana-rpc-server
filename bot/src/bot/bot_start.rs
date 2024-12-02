@@ -7,9 +7,7 @@ use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 use tokio::{ signal, task };
 
 pub async fn start() {
-    log::info!("Starting Bot");
-
-    
+    log::info!("Starting Bot");   
 
     // ** prepare block oracle
 
@@ -20,7 +18,7 @@ pub async fn start() {
 
     let sol_client = Arc::new(RpcClient::new_with_timeout_and_commitment("http://192.168.100.98:18899", Duration::from_secs(240), CommitmentConfig::confirmed()));
     let arc_state = solana_state::get_solana_state();
-    
+
     crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), 
         vec![
             String::from("Hc9iztjxoMiE9uv38WUvwzLqWCN153eF5mFSLZUecB7J")]);
@@ -37,8 +35,6 @@ pub async fn start() {
     create_token_list_oracle::create_token_list(arc_state.clone(), sol_client.clone()).await;
 
     handle_user_address_oracle::add_user_address_to_index_with_all_child_with_sub(Pubkey::try_from("Hc9iztjxoMiE9uv38WUvwzLqWCN153eF5mFSLZUecB7J").unwrap(), arc_state.clone(), sol_client.clone());
-
-    crate::oracles::create_subscription_oracle::set_mutex_transaction_sub(String::from("sage"), vec![String::from("Hc9iztjxoMiE9uv38WUvwzLqWCN153eF5mFSLZUecB7J")]);
 
     create_subscription_oracle::run(arc_state.clone(), sol_client.clone(), String::from("sage")).await;
 

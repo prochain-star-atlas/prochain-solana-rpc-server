@@ -22,13 +22,12 @@ use lazy_static::lazy_static;
 use parking_lot::Mutex;
 
 lazy_static! {
-    static ref SOLANA_STATE_ENCAPSULATOR: Mutex<Arc<SolanaStateManager>> = 
-        Mutex::new(Arc::new(SolanaStateManager::new(Arc::new(RpcClient::new_with_timeout_and_commitment("http://192.168.100.98:18899", Duration::from_secs(240), CommitmentConfig::confirmed())))));
+    static ref SOLANA_STATE_ENCAPSULATOR: Mutex<Arc<SolanaStateManager>> = Mutex::new(Arc::new(SolanaStateManager::new()));
 }
 
 pub fn get_solana_state() -> Arc<SolanaStateManager> {
     let state = SOLANA_STATE_ENCAPSULATOR.lock();
-    return  state.clone();
+    return state.clone();
 }
 
 impl Eq for ProchainAccountInfo {}
@@ -104,7 +103,7 @@ pub struct SolanaStateManager {
 
 impl SolanaStateManager
 {
-    pub fn new(sol_client: Arc<RpcClient>) -> Self {
+    pub fn new() -> Self {
         let state_a: DashMap<Pubkey, ProchainAccountInfo> = DashMap::new();
         let state_o: DashMap<Pubkey, Vec<Pubkey>> = DashMap::new();
         let state_p: DashMap<Pubkey, Vec<Pubkey>> = DashMap::new();
@@ -123,7 +122,7 @@ impl SolanaStateManager
             slot: Arc::new(slot_a),
             blockhash: Arc::new(blockhash_b),
             blockheight: Arc::new(blockheight_b),
-            sol_client: sol_client
+            sol_client: Arc::new(RpcClient::new_with_timeout_and_commitment("http://192.168.100.98:18899", Duration::from_secs(240), CommitmentConfig::confirmed()))
         }
     }
 

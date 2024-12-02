@@ -7,7 +7,7 @@ use actix_web::{
 use serde_json::json;
 use solana_client::{rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig, RpcTokenAccountsFilter}, rpc_request::RpcRequest, rpc_response::{RpcKeyedAccount, RpcResult}};
 use solana_sdk::{commitment_config::{CommitmentConfig, CommitmentLevel}, pubkey::Pubkey};
-use utoipa::{OpenApi, ToSchema};
+use utoipa::OpenApi;
 use crate::{model::model::GrpcYellowstoneSubscription, solana_state::{ProchainAccountInfo, ProchainAccountInfoSchema}};
 
 #[derive(OpenApi)]
@@ -17,6 +17,7 @@ use crate::{model::model::GrpcYellowstoneSubscription, solana_state::{ProchainAc
         get_solana_cached_subscription_owner,
         get_solana_cached_subscription_tokenowner,
         get_solana_cached_subscription_account,
+        get_solana_cached_subscription_token_account,
         get_solana_subscription_settings
     ),
     components(schemas(ProchainAccountInfoSchema, GrpcYellowstoneSubscription))
@@ -30,6 +31,7 @@ pub(super) fn configure() -> impl FnOnce(&mut ServiceConfig) {
             .service(get_solana_cached_subscription_owner)
             .service(get_solana_cached_subscription_tokenowner)
             .service(get_solana_cached_subscription_account)
+            .service(get_solana_cached_subscription_token_account)
             .service(get_solana_subscription_settings);
     }
 }
@@ -98,6 +100,7 @@ async fn get_solana_cached_subscription_owner(owner: Path<String>) -> impl Respo
             write_version: 0,
             last_update: chrono::offset::Utc::now()
         });
+
     });
 
     //self.sol_state. (program_id.clone(), ar_pkey);
@@ -127,8 +130,8 @@ async fn get_solana_cached_subscription_tokenowner(tokenowner: Path<String>) -> 
     let token_account_filter = RpcTokenAccountsFilter::ProgramId(tokenowner.to_string());
     let config = Some( RpcAccountInfoConfig { encoding: None, data_slice: None, commitment: Some(CommitmentConfig { commitment: CommitmentLevel::Confirmed }), min_context_slot: None } );
 
+    let pb_owner = Pubkey::try_from(tokenowner.as_str()).unwrap();  
     let state = crate::solana_state::get_solana_state();
-    let pubkey_owner = Pubkey::try_from(tokenowner.to_string().as_str()).unwrap();
     let sol_client = state.get_sol_client();
 
     let res_rpc: RpcResult<Vec<RpcKeyedAccount>> = sol_client.send(
@@ -136,11 +139,26 @@ async fn get_solana_cached_subscription_tokenowner(tokenowner: Path<String>) -> 
         json!([program_id_str, token_account_filter, config]),
     );
 
-    let res_unwrapped = res_rpc;
+    let acc_owner = sol_client.get_account(&pb_owner).unwrap();    
 
-    let ar_results = res_unwrapped.unwrap().clone();
+    state.add_account_info(pb_owner, ProchainAccountInfo {
+        data: acc_owner.data.clone(),
+        executable: acc_owner.executable,
+        lamports: acc_owner.lamports,
+        owner: acc_owner.owner.clone(),
+        pubkey: pb_owner.clone(),
+        rent_epoch: acc_owner.rent_epoch,
+        slot: 0,
+        txn_signature: None,
+        write_version: 0,
+        last_update: chrono::offset::Utc::now()
+    });
+
+    let ar_results = res_rpc.unwrap().clone();
 
     let mut ar_pkey: Vec<Pubkey> = vec![];
+
+    let mut vec_acc_o = crate::oracles::create_subscription_oracle::get_mutex_token_sub(String::from("sage"));
 
     ar_results.value.iter().for_each(|f| {
 
@@ -161,18 +179,69 @@ async fn get_solana_cached_subscription_tokenowner(tokenowner: Path<String>) -> 
             last_update: chrono::offset::Utc::now()
         };
 
-        state.add_account_info(pb, pca.clone());
+        state.add_account_info(pb.clone(), pca.clone());
+
+        if !vec_acc_o.contains(&pb.clone().to_string()) {
+
+            vec_acc_o.push(pb.clone().to_string());
+    
+        }
 
     });
 
-    let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_program_sub(String::from("sage"));
-    
+    crate::oracles::create_subscription_oracle::set_mutex_token_sub(String::from("sage"), vec_acc_o);
 
+    let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_token_owner_sub(String::from("sage"));
+    
     if !vec_acc.contains(&program_id_str) {
 
         vec_acc.push(program_id_str);
-        crate::oracles::create_subscription_oracle::set_mutex_program_sub(String::from("sage"), vec_acc);
-        crate::oracles::create_subscription_oracle::refresh_owner();
+        crate::oracles::create_subscription_oracle::set_mutex_token_owner_sub(String::from("sage"), vec_acc);
+
+    }
+
+    crate::oracles::create_subscription_oracle::refresh_tokenowner();
+    
+    HttpResponse::Ok().json(true)
+
+}
+
+#[utoipa::path(
+    responses(
+        (status = 200, description = "add subscription by token account", body = [bool])
+    )
+)]
+#[get("/solana/cached/subscription/token/{account}")]
+async fn get_solana_cached_subscription_token_account(account: Path<String>) -> impl Responder {
+
+    let pb_token = Pubkey::try_from(account.as_str()).unwrap();  
+    let state = crate::solana_state::get_solana_state();
+    let sol_client = state.get_sol_client();
+    
+    let acc_raw = sol_client.get_account(&pb_token).unwrap();       
+
+    let pca = ProchainAccountInfo {
+        data: acc_raw.data.clone(),
+        executable: acc_raw.executable,
+        lamports: acc_raw.lamports,
+        owner: acc_raw.owner.clone(),
+        pubkey: pb_token.clone(),
+        rent_epoch: acc_raw.rent_epoch,
+        slot: 0,
+        txn_signature: None,
+        write_version: 0,
+        last_update: chrono::offset::Utc::now()
+    };
+
+    state.add_account_info(pb_token.clone(), pca.clone());
+
+    let mut vec_token_sub = crate::oracles::create_subscription_oracle::get_mutex_token_sub(String::from("sage"));
+    
+    if !vec_token_sub.contains(&pb_token.clone().to_string()) {
+
+        vec_token_sub.push(pb_token.clone().to_string());
+        crate::oracles::create_subscription_oracle::set_mutex_token_sub(String::from("sage"), vec_token_sub.clone());
+        crate::oracles::create_subscription_oracle::refresh_tokenowner();
 
     }
 
@@ -246,14 +315,12 @@ async fn get_solana_subscription_settings() -> impl Responder {
     let sage_program = crate::oracles::create_subscription_oracle::get_mutex_program_sub(sub_name.clone());
     let sage_account = crate::oracles::create_subscription_oracle::get_mutex_account_sub(sub_name.clone());
     let sage_token_account = crate::oracles::create_subscription_oracle::get_mutex_token_sub(sub_name.clone());
-    let sage_trans_account = crate::oracles::create_subscription_oracle::get_mutex_transaction_sub(sub_name.clone());
 
     let res1 = GrpcYellowstoneSubscription {
         name: sub_name.clone(),
         accounts: sage_account,
         token_accounts: sage_token_account,
-        owners: sage_program,
-        transactions: sage_trans_account
+        owners: sage_program
     };
 
     HttpResponse::Ok().json(res1)

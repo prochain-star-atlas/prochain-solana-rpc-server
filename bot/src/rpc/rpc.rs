@@ -103,6 +103,15 @@ pub mod rpc_accounts {
             config: Option<RpcAccountInfoConfig>
         ) -> BoxFuture<Result<solana_client::rpc_response::Response<Vec<RpcKeyedAccount>>>>;
 
+        #[rpc(meta, name = "getNonCachedTokenAccountsByOwner")]
+        fn get_non_cached_token_accounts_by_owner(
+            &self,
+            meta: Self::Metadata,
+            program_id_str: String,
+            token_account_filter: RpcTokenAccountsFilter,
+            config: Option<RpcAccountInfoConfig>
+        ) -> BoxFuture<Result<solana_client::rpc_response::Response<Vec<RpcKeyedAccount>>>>;
+
         #[rpc(meta, name = "getTokenAccountBalance")]
         fn get_token_accounts_balance(
             &self,
@@ -286,6 +295,16 @@ pub mod rpc_accounts {
             config:Option<RpcAccountInfoConfig>) -> BoxFuture<Result<Response<Vec<RpcKeyedAccount>>>> {
             
             Box::pin(async move { meta.get_token_account_by_owner(program_id_str, token_account_filter, config).await })
+
+        }
+
+        fn get_non_cached_token_accounts_by_owner(&self,
+            meta:Self::Metadata,
+            program_id_str:String,
+            token_account_filter:RpcTokenAccountsFilter,
+            config:Option<RpcAccountInfoConfig>) -> BoxFuture<Result<Response<Vec<RpcKeyedAccount>>>> {
+            
+            Box::pin(async move { meta.get_non_cached_token_account_by_owner(program_id_str, token_account_filter, config).await })
 
         }
         

@@ -946,6 +946,79 @@ impl JsonRpcRequestProcessor {
 
     }
 
+    pub async fn get_non_cached_token_account_by_owner(
+        &self,
+        program_id_str: String,
+        token_account_filter: RpcTokenAccountsFilter,
+        config: Option<RpcAccountInfoConfig>
+    ) -> Result<Response<Vec<RpcKeyedAccount>>> {
+
+        info!("[RPC] get_token_account_by_owner request received: {}", program_id_str.to_string());
+    
+        let res_rpc: RpcResult<Vec<RpcKeyedAccount>> = self.sol_client.send(
+            RpcRequest::GetTokenAccountsByOwner,
+            json!([program_id_str, token_account_filter, config.clone()]),
+        );
+
+        if res_rpc.is_err() {
+            return Err(jsonrpc_core::error::Error::internal_error());
+        }
+
+        let ar_results = res_rpc.unwrap().clone();
+
+        let mut ar_pkey: Vec<String> = vec![];
+
+        ar_results.value.iter().for_each(|f| {
+            let pb = Pubkey::try_from(f.pubkey.as_str()).unwrap();  
+            let acc_raw = self.sol_client.get_account(&pb).unwrap();       
+            ar_pkey.push(pb.to_string());
+
+            let pca = ProchainAccountInfo {
+                data: acc_raw.data.clone(),
+                executable: acc_raw.executable,
+                lamports: acc_raw.lamports,
+                owner: acc_raw.owner.clone(),
+                pubkey: pb.clone(),
+                rent_epoch: acc_raw.rent_epoch,
+                slot: 0,
+                txn_signature: None,
+                write_version: 0,
+                last_update: chrono::offset::Utc::now()
+            };
+
+            self.sol_state.add_account_info(pb, pca.clone());
+
+        });
+
+        let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_program_sub(String::from("sage"));
+        if !vec_acc.contains(&program_id_str.clone()) {
+            vec_acc.push(program_id_str.clone());
+            
+            crate::oracles::create_subscription_oracle::set_mutex_program_sub(String::from("sage"), vec_acc);
+            crate::oracles::create_subscription_oracle::refresh_owner();
+        }
+
+        let mut vec_acc_v = crate::oracles::create_subscription_oracle::get_mutex_token_sub(String::from("sage"));
+        let len_origin = vec_acc_v.len();
+        vec_acc_v.append(&mut ar_pkey);
+        let vec_acc_v_uniq: Vec<String> = vec_acc_v.into_iter().unique().collect();
+
+        if len_origin != vec_acc_v_uniq.len() {
+            crate::oracles::create_subscription_oracle::set_mutex_token_sub(String::from("sage"), vec_acc_v_uniq);
+            crate::oracles::create_subscription_oracle::refresh_token_account();
+        }
+
+        let mut vec_acc_o = crate::oracles::create_subscription_oracle::get_mutex_token_sub(String::from("sage"));
+        if !vec_acc_o.contains(&program_id_str) {
+            vec_acc_o.push(program_id_str);
+            crate::oracles::create_subscription_oracle::set_mutex_token_owner_sub(String::from("sage"), vec_acc_o);
+            crate::oracles::create_subscription_oracle::refresh_token_owner();
+        }
+
+        Ok(ar_results)
+
+    }
+
     pub async fn get_token_accounts_balance(
         &self,
         program_id_str:String,

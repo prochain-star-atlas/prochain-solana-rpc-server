@@ -256,7 +256,8 @@ async fn get_solana_cached_subscription_tokenowner(tokenowner: Path<String>) -> 
 
     }
 
-    crate::oracles::create_subscription_oracle::refresh_tokenowner();
+    crate::oracles::create_subscription_oracle::refresh_token_account();
+    crate::oracles::create_subscription_oracle::refresh_token_owner();
     
     HttpResponse::Ok().json(true)
 
@@ -297,7 +298,7 @@ async fn get_solana_cached_subscription_token_account(account: Path<String>) -> 
 
         vec_token_sub.push(pb_token.clone().to_string());
         crate::oracles::create_subscription_oracle::set_mutex_token_sub(String::from("sage"), vec_token_sub.clone());
-        crate::oracles::create_subscription_oracle::refresh_tokenowner();
+        crate::oracles::create_subscription_oracle::refresh_token_owner();
 
     }
 
@@ -372,11 +373,13 @@ async fn get_solana_subscription_settings() -> impl Responder {
     let sage_program = crate::oracles::create_subscription_oracle::get_mutex_program_sub(sub_name.clone());
     let sage_account = crate::oracles::create_subscription_oracle::get_mutex_account_sub(sub_name.clone());
     let sage_token_account = crate::oracles::create_subscription_oracle::get_mutex_token_sub(sub_name.clone());
+    let sage_token_owner_account = crate::oracles::create_subscription_oracle::get_mutex_token_owner_sub(sub_name.clone());
 
     let res1 = GrpcYellowstoneSubscription {
         name: sub_name.clone(),
         accounts: sage_account,
         token_accounts: sage_token_account,
+        token_owner: sage_token_owner_account,
         owners: sage_program
     };
 

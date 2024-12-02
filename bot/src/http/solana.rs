@@ -80,15 +80,14 @@ async fn get_solana_cached_subscription_owner(owner: Path<String>) -> impl Respo
 
     let state = crate::solana_state::get_solana_state();
     let pubkey_owner = Pubkey::try_from(owner.to_string().as_str()).unwrap();
-    let sol_client = state.get_sol_client();
+    let sol_client = solana_client::nonblocking::rpc_client::RpcClient::new_with_timeout_and_commitment(String::from("http://192.168.100.98:18899"), Duration::from_secs(240), CommitmentConfig::confirmed());
     let config = RpcProgramAccountsConfig { filters: None, account_config: RpcAccountInfoConfig { encoding: None, data_slice: None, commitment: Some(CommitmentConfig { commitment: CommitmentLevel::Confirmed }), min_context_slot: None }, with_context: None, sort_results: None };
 
-    let res = sol_client.get_program_accounts_with_config(&pubkey_owner, config.clone());       
+    let res = sol_client.get_program_accounts_with_config(&pubkey_owner, config.clone()).await;       
     let ar_results = res.unwrap();
 
-    ar_results.iter().for_each(|f| {
-
-        let res_simple_account = sol_client.get_account(&f.0.clone()).unwrap();
+    for f in ar_results {
+        let res_simple_account = sol_client.get_account(&f.0.clone()).await.unwrap();
 
         state.add_account_info(f.0.clone(), ProchainAccountInfo {
             data: res_simple_account.data.clone(),
@@ -102,8 +101,7 @@ async fn get_solana_cached_subscription_owner(owner: Path<String>) -> impl Respo
             write_version: 0,
             last_update: chrono::offset::Utc::now()
         });
-
-    });
+    }
 
     //self.sol_state. (program_id.clone(), ar_pkey);
     let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_program_sub(String::from("sage"));
@@ -134,14 +132,9 @@ async fn get_solana_cached_subscription_tokenowner(tokenowner: Path<String>) -> 
 
     let pb_owner = Pubkey::try_from(tokenowner.as_str()).unwrap();  
     let state = crate::solana_state::get_solana_state();
-    let sol_client = state.get_sol_client();
+    let sol_client = solana_client::nonblocking::rpc_client::RpcClient::new_with_timeout_and_commitment(String::from("http://192.168.100.98:18899"), Duration::from_secs(240), CommitmentConfig::confirmed());
 
-    let res_rpc: RpcResult<Vec<RpcKeyedAccount>> = sol_client.send(
-        RpcRequest::GetTokenAccountsByOwner,
-        json!([program_id_str, token_account_filter, config]),
-    );
-
-    let acc_owner = sol_client.get_account(&pb_owner).unwrap();    
+    let acc_owner = sol_client.get_account(&pb_owner).await.unwrap();    
 
     state.add_account_info(pb_owner, ProchainAccountInfo {
         data: acc_owner.data.clone(),
@@ -156,16 +149,21 @@ async fn get_solana_cached_subscription_tokenowner(tokenowner: Path<String>) -> 
         last_update: chrono::offset::Utc::now()
     });
 
+    let res_rpc: RpcResult<Vec<RpcKeyedAccount>> = sol_client.send(
+        RpcRequest::GetTokenAccountsByOwner,
+        json!([program_id_str, token_account_filter, config]),
+    ).await;
+
     let ar_results = res_rpc.unwrap().clone();
 
     let mut ar_pkey: Vec<Pubkey> = vec![];
 
     let mut vec_acc_o = crate::oracles::create_subscription_oracle::get_mutex_token_sub(String::from("sage"));
 
-    ar_results.value.iter().for_each(|f| {
+    for f in ar_results.value {
 
         let pb = Pubkey::try_from(f.pubkey.as_str()).unwrap();  
-        let acc_raw = sol_client.get_account(&pb).unwrap();       
+        let acc_raw = sol_client.get_account(&pb).await.unwrap();       
         ar_pkey.push(pb);
 
         let pca = ProchainAccountInfo {
@@ -189,7 +187,7 @@ async fn get_solana_cached_subscription_tokenowner(tokenowner: Path<String>) -> 
     
         }
 
-    });
+    }
 
     crate::oracles::create_subscription_oracle::set_mutex_token_sub(String::from("sage"), vec_acc_o);
 
@@ -218,9 +216,9 @@ async fn get_solana_cached_subscription_token_account(account: Path<String>) -> 
 
     let pb_token = Pubkey::try_from(account.as_str()).unwrap();  
     let state = crate::solana_state::get_solana_state();
-    let sol_client = state.get_sol_client();
+    let sol_client = solana_client::nonblocking::rpc_client::RpcClient::new_with_timeout_and_commitment(String::from("http://192.168.100.98:18899"), Duration::from_secs(240), CommitmentConfig::confirmed());
     
-    let acc_raw = sol_client.get_account(&pb_token).unwrap();       
+    let acc_raw = sol_client.get_account(&pb_token).await.unwrap();       
 
     let pca = ProchainAccountInfo {
         data: acc_raw.data.clone(),
@@ -270,8 +268,8 @@ async fn get_solana_cached_subscription_account(account: Path<String>) -> impl R
 
     let state = crate::solana_state::get_solana_state();
     let pubkey = Pubkey::try_from(account.to_string().as_str()).unwrap();
-    let sol_client = state.get_sol_client();
-    let res = sol_client.get_account_with_config(&pubkey, config).unwrap();
+    let sol_client = solana_client::nonblocking::rpc_client::RpcClient::new_with_timeout_and_commitment(String::from("http://192.168.100.98:18899"), Duration::from_secs(240), CommitmentConfig::confirmed());
+    let res = sol_client.get_account_with_config(&pubkey, config).await.unwrap();
 
     let acc_pk = res.value.clone().unwrap_or_default();
 

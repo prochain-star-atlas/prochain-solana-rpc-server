@@ -422,7 +422,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
         loop {
 
-            log::info!("refresh subscription token owner: {:?}", get_mutex_token_sub(sub_name_local_3.clone()).len());
+            log::info!("refresh subscription token owner: {:?}", get_mutex_token_owner_sub(sub_name_local_3.clone()).len());
             SPINLOCK_REFRESH_MESSAGE.swap(0, Ordering::Relaxed);
 
             if SPINLOCK_REFRESH.swap(0, Ordering::Relaxed) == 1 {

@@ -19,6 +19,10 @@ pub async fn start() {
     let sol_client = Arc::new(RpcClient::new_with_timeout_and_commitment("http://192.168.100.98:18899", Duration::from_secs(240), CommitmentConfig::confirmed()));
     let arc_state = solana_state::get_solana_state();
 
+    crate::oracles::create_subscription_oracle::set_mutex_token_owner_sub(String::from("sage"), 
+        vec![
+            String::from("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"), String::from("Hc9iztjxoMiE9uv38WUvwzLqWCN153eF5mFSLZUecB7J")]);
+
     crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), 
         vec![
             String::from("Hc9iztjxoMiE9uv38WUvwzLqWCN153eF5mFSLZUecB7J")]);

@@ -16,6 +16,8 @@ use crate::{model::model::GrpcYellowstoneSubscription, solana_state::{ProchainAc
 #[openapi(
     paths(
         get_solana_cached_acount_info,
+        get_solana_cached_refresh_acount,
+        get_solana_cached_close_acount,
         get_solana_cached_subscription_owner,
         get_solana_cached_subscription_tokenowner,
         get_solana_cached_subscription_account,
@@ -30,6 +32,8 @@ pub(super) fn configure() -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
         config
             .service(get_solana_cached_acount_info)
+            .service(get_solana_cached_refresh_acount)
+            .service(get_solana_cached_close_acount)
             .service(get_solana_cached_subscription_owner)
             .service(get_solana_cached_subscription_tokenowner)
             .service(get_solana_cached_subscription_account)
@@ -67,6 +71,58 @@ async fn get_solana_cached_acount_info(addr: Path<String>) -> impl Responder {
     };
 
     HttpResponse::Ok().json(acc_info)
+
+}
+
+#[utoipa::path(
+    responses(
+        (status = 200, description = "closing solana account", body = [bool])
+    )
+)]
+#[get("/solana/cached/close/account/{addr}")]
+async fn get_solana_cached_close_acount(addr: Path<String>) -> impl Responder {
+
+    let pk = Pubkey::try_from(addr.to_string().as_str()).unwrap();
+    let state = crate::solana_state::get_solana_state();
+    let acc = state.get_account_info(pk).unwrap().unwrap();
+
+    if acc.lamports > 0 {
+        state.clean_zero_account(pk);
+    }
+
+    HttpResponse::Ok().json(true)
+
+}
+
+#[utoipa::path(
+    responses(
+        (status = 200, description = "closing solana account", body = [bool])
+    )
+)]
+#[get("/solana/cached/refresh/account/{addr}")]
+async fn get_solana_cached_refresh_acount(addr: Path<String>) -> impl Responder {
+
+    let pk = Pubkey::try_from(addr.to_string().as_str()).unwrap();
+
+    let sol_client = solana_client::nonblocking::rpc_client::RpcClient::new_with_timeout_and_commitment(String::from("http://192.168.100.98:18899"), Duration::from_secs(240), CommitmentConfig::confirmed());
+    let state = crate::solana_state::get_solana_state();
+
+    let res_simple_account = sol_client.get_account(&pk.clone()).await.unwrap();
+
+    state.add_account_info(pk.clone(), ProchainAccountInfo {
+        data: res_simple_account.data.clone(),
+        executable: res_simple_account.executable,
+        lamports: res_simple_account.lamports,
+        owner: Pubkey::try_from(res_simple_account.owner.to_bytes().to_vec()).unwrap(),
+        pubkey: pk.clone(),
+        rent_epoch: res_simple_account.rent_epoch,
+        slot: 0,
+        txn_signature: None,
+        write_version: 0,
+        last_update: chrono::offset::Utc::now()
+    });
+
+    HttpResponse::Ok().json(true)
 
 }
 

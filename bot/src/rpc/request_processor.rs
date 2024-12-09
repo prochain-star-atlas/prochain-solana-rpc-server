@@ -1,4 +1,4 @@
-use std::{cmp::min, collections::HashMap, simd::Swizzle, str::FromStr};
+use std::{cmp::min, collections::HashMap, str::FromStr};
 
 /// The JSON request processor
 /// This takes the request from the client and load the information from the datastore.

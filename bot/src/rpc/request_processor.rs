@@ -1,4 +1,4 @@
-use std::{cmp::min, collections::HashMap, str::FromStr};
+use std::{cmp::min, collections::HashMap, simd::Swizzle, str::FromStr};
 
 /// The JSON request processor
 /// This takes the request from the client and load the information from the datastore.
@@ -256,37 +256,58 @@ impl JsonRpcRequestProcessor {
 
             info!("[RPC] get_account_info request received: {}", pubkey.to_string());
 
-            let res = self.sol_client.get_account_with_config(pubkey, config).unwrap();
+            let res = self.sol_client.get_account_with_config(pubkey, config);
 
-            let acc_pk = res.value.clone().unwrap_or_default();
+            match res {
 
-            let pa = ProchainAccountInfo {
-                data: acc_pk.data,
-                executable: acc_pk.executable,
-                lamports: acc_pk.lamports,
-                owner: Pubkey::try_from(acc_pk.owner).unwrap(),
-                pubkey: pubkey.clone(),
-                rent_epoch: acc_pk.rent_epoch,
-                slot: 0,
-                txn_signature: None,
-                write_version: 0,
-                last_update: chrono::offset::Utc::now()
-            };
+                Ok(val) => {
 
-            if res.value.clone().is_some() {
-    
-                self.sol_state.add_account_info(pubkey.clone(), pa.clone());
-                let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
-                vec_acc.push(pubkey.to_string());
-                crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
-                crate::oracles::create_subscription_oracle::refresh();
-    
-                return Some(pa.clone());
+                    match val.value {
 
+                        Some(acc) => {
+
+                            let acc_pk = acc;
+            
+                            let pa = ProchainAccountInfo {
+                                data: acc_pk.data,
+                                executable: acc_pk.executable,
+                                lamports: acc_pk.lamports,
+                                owner: Pubkey::try_from(acc_pk.owner).unwrap(),
+                                pubkey: pubkey.clone(),
+                                rent_epoch: acc_pk.rent_epoch,
+                                slot: 0,
+                                txn_signature: None,
+                                write_version: 0,
+                                last_update: chrono::offset::Utc::now()
+                            };
+            
+                            self.sol_state.add_account_info(pubkey.clone(), pa.clone());
+                            let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
+                            vec_acc.push(pubkey.to_string());
+                            crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), vec_acc);
+                            crate::oracles::create_subscription_oracle::refresh();
+                
+                            return Some(pa.clone());
+
+                        },
+                        None => {
+
+                            return None;
+
+                        }
+                        
+                    }
+
+                },
+
+                Err(err) => {
+
+                    error!("[RPC] get_account_info request received: {}, {}", pubkey.to_string(), err.to_string());
+
+                    return None;
+                }
             }
-
-            self.sol_state.add_account_info(pubkey.clone(), pa.clone());
-            return Some(pa.clone());
+                        
         }
 
     }

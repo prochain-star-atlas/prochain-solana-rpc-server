@@ -229,10 +229,9 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
 pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: UserFleetInstanceRequest) -> Result<FleetSubscription, anyhow::Error> {
 
     let mut fleet_sub = FleetSubscription { account_address: vec![], owner_address: vec![] };
-    let pub_key = Pubkey::try_from(ufi.publicKey.as_str())?;
 
-    fleet_sub.account_address.push(pub_key.to_string());
-    fleet_sub.owner_address.push(pub_key.to_string());
+    fleet_sub.account_address.push(ufi.publicKey.to_string());
+    fleet_sub.owner_address.push(ufi.publicKey.to_string());
 
     let rpc_token_account_filter = RpcTokenAccountsFilter::ProgramId("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA".to_string());
 

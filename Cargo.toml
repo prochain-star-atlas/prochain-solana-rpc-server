@@ -149,3 +149,11 @@ rmpv = { version = "1.3.0", features = ["with-serde"] }
 [patch.crates-io]
 aes-gcm-siv = { git = 'https://github.com/block-mesh/AEADs', branch = 'rustls-dep-hell-1-18' }
 curve25519-dalek = { git = "https://github.com/block-mesh/curve25519-dalek", branch = "rustls-dep-hell-1-18" }
+
+[profile.maxperf]
+inherits = "release"
+debug = true
+lto = "fat"
+opt-level = 3
+codegen-units = 1
+

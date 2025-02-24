@@ -51,7 +51,7 @@ pub async fn create_cron_scheduler(state: Arc<SolanaStateManager>, sol_client: A
         
                 } else {
                     let err = res.err().unwrap();
-                    log::error!("error calling get_account: {}", err);
+                    //log::error!("error calling get_account: {}", err);
 
                     if err.to_string().contains(&String::from("AccountNotFound")) {
                         cloned_state.clean_zero_account(pk.clone());

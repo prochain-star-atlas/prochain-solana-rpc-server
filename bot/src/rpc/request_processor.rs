@@ -906,7 +906,6 @@ impl JsonRpcRequestProcessor {
     
             let res_unwrapped = res_rpc;
 
-
             if res_unwrapped.is_err() {
                 return Err(jsonrpc_core::error::Error::internal_error());
             }

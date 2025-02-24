@@ -73,6 +73,7 @@ impl JsonRpcService {
                 .build()
                 .expect("Runtime"),
         );
+
         let request_processor = JsonRpcRequestProcessor::new(config, sol_client, state);
 
         let thread_hdl = Builder::new()

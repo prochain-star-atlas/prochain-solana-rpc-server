@@ -1,0 +1,724 @@
+use std::{collections::HashMap, str::FromStr, sync::atomic::AtomicUsize};
+
+use parking_lot::Mutex;
+use serde::{Deserialize, Serialize};
+use socketioxide::{
+    extract::{Data, SocketRef, State},
+    SocketIo,
+};
+use solana_account_decoder::{UiAccountData, UiAccountEncoding};
+use solana_client::{rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig, RpcTokenAccountsFilter}, rpc_filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType}};
+use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
+use std::sync::Arc;
+use tower::ServiceBuilder;
+use tower_http::{cors::CorsLayer, services::ServeDir};
+use solana_account_decoder::UiAccountData::{Json, Binary, LegacyBinary};
+use crate::{rpc::rpc::OptionalContext::{Context, NoContext}, utils::types::structs::prochain::UserFleetCargoItem};
+use crate::{rpc::{request_processor::JsonRpcRequestProcessor, rpc_service::JsonRpcConfig}, solana_state::SolanaStateManager, utils::types::structs::prochain::{UserFleetInstanceRequest, UserFleetInstanceResponse}};
+use log::error;
+use std::sync::atomic::Ordering;
+
+use {
+    futures::{sink::SinkExt, stream::StreamExt},
+    maplit::hashmap,
+    yellowstone_grpc_client::GeyserGrpcClient,
+    yellowstone_grpc_proto::prelude::{
+        subscribe_update::UpdateOneof, SubscribeRequest,
+        SubscribeRequestFilterBlocksMeta, SubscribeRequestFilterAccounts
+    },
+};
+
+use lazy_static::lazy_static;
+use dashmap::DashMap;
+use tracing::info;
+
+lazy_static! {
+    static ref LIST_FLEET_SUBSCRIPTION: Mutex<DashMap<String, FleetSubscription>> = Mutex::new(DashMap::new());
+    static ref SPINLOCK_REFRESH_FLEET: Mutex<DashMap<String, Arc<AtomicUsize>>> = Mutex::new(DashMap::new());
+}
+
+pub fn set_mutex_fleet_sub(sub_name: String, lst_vec: FleetSubscription) {
+    LIST_FLEET_SUBSCRIPTION.lock().insert(sub_name.clone(), lst_vec);
+    SPINLOCK_REFRESH_FLEET.lock().insert(sub_name.clone(), Arc::new(AtomicUsize::new(0)));
+}
+
+pub fn remove_mutex_fleet_sub(sub_name: String) {
+    LIST_FLEET_SUBSCRIPTION.lock().remove(&sub_name.clone());
+    SPINLOCK_REFRESH_FLEET.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+}
+
+pub fn get_mutex_fleet_sub(sub_name: String) -> FleetSubscription {
+    let map = LIST_FLEET_SUBSCRIPTION.lock();
+    let val0 = map.get(&sub_name);
+    match val0 {
+        None => { return FleetSubscription { account_address: vec![], owner_address: vec![] }; },
+        Some(val) => { val.value().clone() }
+    }
+}
+
+pub fn get_mutex_spinlock_fleet_sub(sub_name: String) -> Arc<AtomicUsize> {
+    let map = SPINLOCK_REFRESH_FLEET.lock();
+    let val0 = map.get(&sub_name);
+    match val0 {
+        None => { return Arc::new(AtomicUsize::new(0)); },
+        Some(val) => { val.value().clone() }
+    }
+}
+
+pub fn start_socketio_httpd(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) {
+
+    log::info!("Starting SocketIO httpd !");
+    let _1 = std::thread::spawn(|| {
+    
+        let _t = run(config, state, sol_client).is_ok();
+        log::info!("SocketIO httpd started !");
+    });
+
+}
+
+#[derive(Clone)]
+pub struct FleetSubscription {
+    account_address: Vec<String>,
+    owner_address: Vec<String>
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase", untagged)]
+enum Res {
+    Login {
+        #[serde(rename = "numUsers")]
+        num_users: usize,
+    }
+}
+
+#[derive(Clone)]
+struct UserCnt(Arc<AtomicUsize>, DashMap<String, String>);
+impl UserCnt {
+    fn new() -> Self {
+        Self(Arc::new(AtomicUsize::new(0)), DashMap::new())
+    }
+    fn add_user(&self, socket_id: String) {
+        let _ = self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+        self.1.alter(&socket_id, |k, v| {
+            return socket_id.clone();
+        });
+    }
+    fn remove_user(&self, socket_id: String) {
+        let _ = self.0.fetch_sub(1, std::sync::atomic::Ordering::SeqCst) - 1;
+        self.1.remove(&socket_id);
+    }
+}
+
+pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: String, json_rpc_processor: JsonRpcRequestProcessor, ufi: UserFleetInstanceRequest, s: SocketRef) {
+
+    let sub_name_local = sub_name.clone();
+    let local_arc = state.clone();
+
+    let _1 = tokio::spawn(async move {
+
+        loop {
+
+            if get_mutex_spinlock_fleet_sub(sub_name_local.clone()).swap(0, Ordering::Relaxed) == 1 {
+                break;
+            }
+            
+            let mut client = GeyserGrpcClient::build_from_shared(String::from("http://192.168.100.98:10000")).unwrap().connect().await.unwrap();
+
+            let (mut subscribe_tx, mut stream) = client.subscribe().await.unwrap();           
+
+            let sub_fleet = get_mutex_fleet_sub(sub_name_local.clone());
+
+            let mut hp = HashMap::new();
+            hp.insert(sub_name_local.clone() + "_fleet_account", SubscribeRequestFilterAccounts {
+                account: sub_fleet.account_address,
+                owner: sub_fleet.owner_address,
+                filters: vec![],
+                nonempty_txn_signature: None
+            });
+
+            let _res = subscribe_tx
+                .send(SubscribeRequest {
+                    slots: HashMap::new(),
+                    accounts: hp,
+                    transactions: HashMap::new(),
+                    transactions_status: HashMap::new(),
+                    entry: HashMap::new(),
+                    blocks: HashMap::new(),
+                    blocks_meta: hashmap! { "".to_owned() => SubscribeRequestFilterBlocksMeta {} },
+                    commitment: Some(1 as i32),
+                    accounts_data_slice: vec![],
+                    ping: None,
+                })
+                .await;
+
+            _res.unwrap();
+
+            while let Some(message) = stream.next().await {
+
+                if get_mutex_spinlock_fleet_sub(sub_name_local.clone()).swap(0, Ordering::Relaxed) == 1 {
+                    break;
+                }
+
+                match message {
+                    Ok(msg) => {
+                        match msg.update_oneof {
+                            Some(UpdateOneof::Account(tx)) => {
+
+                                if let Some(acc) = tx.account {
+
+                                    if acc.lamports == 0 {
+                                        local_arc.clean_zero_account(Pubkey::from_str(String::from_utf8(acc.pubkey.clone()).unwrap_or_default().as_str()).unwrap_or_default());
+                                    } else {
+                                        local_arc.handle_account_update(acc);
+                                    }
+
+                                    let fleet_refreshed = refresh_fleet(json_rpc_processor.clone(), ufi.clone()).await;
+                                    let fleet_refreshed_json = serde_json::to_string(&fleet_refreshed);
+                                    if fleet_refreshed_json.is_ok() {
+                                        let _ = s.emit("userfleet_refreshed", &fleet_refreshed_json.unwrap());
+                                    }
+                                                                        
+                                }
+
+                            }
+                            _ => {}
+                        }
+                    }
+                    Err(error) => {
+                        error!("stream error: {error:?}");
+                        break;
+                    }
+                }
+            
+            }
+
+            let _1 = subscribe_tx.close().await.unwrap();
+            info!("closing yellowstone subscription for fleets ...");
+
+        } // end of loop
+
+    });   
+
+    let _set_j = vec![_1];
+
+}
+
+pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: UserFleetInstanceRequest) -> FleetSubscription {
+
+    let mut fleet_sub = FleetSubscription { account_address: vec![], owner_address: vec![] };
+    let pub_key = Pubkey::try_from(ufi.publicKey.as_str()).unwrap();
+
+    fleet_sub.account_address.push(pub_key.to_string());
+    fleet_sub.owner_address.push(pub_key.to_string());
+
+    let rpc_token_account_filter = RpcTokenAccountsFilter::ProgramId("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA".to_string());
+
+    let rpc_acc_info_req_3 = RpcAccountInfoConfig {
+        encoding: Some(UiAccountEncoding::JsonParsed),
+        data_slice: None,
+        commitment: Some(CommitmentConfig::confirmed()),
+        min_context_slot: None,
+    };
+
+    fleet_sub.owner_address.push(ufi.cargoHold.clone());
+    let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(ufi.cargoHold.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_3)).await.unwrap();
+    let current_food_iter = fleet_current_cargo.value.iter().filter(|f| { f.pubkey == ufi.foodToken }).nth(0);
+    if current_food_iter.is_some() {
+
+        let addr1 = match current_food_iter.unwrap().clone().account.data {
+            Json(t) => {
+                Some(t.program)
+            }
+            Binary(_1, _2) => None,
+            LegacyBinary(_1) => None
+        };
+
+        if addr1.is_some() {
+            fleet_sub.account_address.push(addr1.unwrap());
+        }
+        
+    }
+
+    let current_sdu_iter = fleet_current_cargo.value.iter().filter(|f| { f.pubkey == ufi.sduToken }).nth(0);
+    if current_sdu_iter.is_some() {
+
+        let addr1 = match current_sdu_iter.unwrap().clone().account.data {
+            Json(t) => {
+                Some(t.program)
+            }
+            Binary(_1, _2) => {
+                None
+            },
+            LegacyBinary(_1) => {
+                None
+            }
+        };
+
+        if addr1.is_some() {
+            fleet_sub.account_address.push(addr1.unwrap());
+        }
+
+    }
+
+    let rpc_acc_info_req_4 = RpcAccountInfoConfig {
+        encoding: Some(UiAccountEncoding::JsonParsed),
+        data_slice: None,
+        commitment: Some(CommitmentConfig::confirmed()),
+        min_context_slot: None,
+    };
+
+    fleet_sub.owner_address.push(ufi.fuelTank.clone());
+    let fleet_current_fuel = json_rpc_processor.get_token_account_by_owner(ufi.fuelTank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_4)).await.unwrap();
+    let current_fuel_iter = fleet_current_fuel.value.iter().filter(|f| { f.pubkey == ufi.fuelToken }).nth(0);
+    if current_fuel_iter.is_some() {
+
+        let addr1 = match current_fuel_iter.unwrap().clone().account.data {
+            Json(t) => {
+                Some(t.program)
+            }
+            Binary(_1, _2) => {
+                None
+            },
+            LegacyBinary(_1) => {
+                None
+            }
+        };
+
+        if addr1.is_some() {
+            fleet_sub.account_address.push(addr1.unwrap());
+        }
+
+    }
+
+    let rpc_acc_info_req_5 = RpcAccountInfoConfig {
+        encoding: Some(UiAccountEncoding::JsonParsed),
+        data_slice: None,
+        commitment: Some(CommitmentConfig::confirmed()),
+        min_context_slot: None,
+    };
+
+    fleet_sub.owner_address.push(ufi.ammoBank.clone());
+    let fleet_current_ammo = json_rpc_processor.get_token_account_by_owner(ufi.ammoBank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_5)).await.unwrap();
+    let current_ammo_iter = fleet_current_ammo.value.iter().filter(|f| { f.pubkey == ufi.ammoToken }).nth(0);
+    if current_ammo_iter.is_some() {
+
+        let addr1 = match current_ammo_iter.unwrap().clone().account.data {
+            Json(t) => {
+                Some(t.program)
+            }
+            Binary(_1, _2) => {
+                None
+            },
+            LegacyBinary(_1) => {
+                None
+            }
+        };
+
+        if addr1.is_some() {
+            fleet_sub.account_address.push(addr1.unwrap());
+        }
+
+    }
+
+    let rpc_acc_info_req_2 = RpcAccountInfoConfig {
+        encoding: Some(UiAccountEncoding::Base64),
+        data_slice: None,
+        commitment: Some(CommitmentConfig::confirmed()),
+        min_context_slot: None,
+    };
+
+    let rpc_prog_info = RpcProgramAccountsConfig {
+        filters: Some(vec![
+            RpcFilterType::Memcmp(Memcmp::new(0, MemcmpEncodedBytes::Base58(String::from_str("UcyYNefQ2BW").unwrap()))),
+            RpcFilterType::Memcmp(Memcmp::new(41, MemcmpEncodedBytes::Base58(ufi.publicKey.to_string())))]),
+        account_config: rpc_acc_info_req_2,
+        with_context: None,
+        sort_results: None,
+    };
+
+    let starbase_player_cargo_holds = json_rpc_processor.get_program_accounts(&Pubkey::try_from("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk").unwrap(), Some(rpc_prog_info)).await.unwrap();
+
+    let rp1 = match starbase_player_cargo_holds {
+
+        Context(ctx) => {
+            
+            for rka in ctx.value {
+
+                let rpc_acc_info_req_cargo = RpcAccountInfoConfig {
+                    encoding: Some(UiAccountEncoding::JsonParsed),
+                    data_slice: None,
+                    commitment: Some(CommitmentConfig::confirmed()),
+                    min_context_slot: None,
+                };
+            
+                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await.unwrap();
+                
+                for fcc in fleet_current_cargo.value {
+
+                    let addr1 = match fcc.clone().account.data {
+                        Json(t) => {
+                            Some(t.program)
+                        }
+                        Binary(_1, _2) => {
+                            None
+                        },
+                        LegacyBinary(_1) => {
+                            None
+                        }
+                    };
+
+                    if addr1.is_some() {
+                        fleet_sub.account_address.push(addr1.unwrap());
+                    }
+
+                }
+
+            }
+
+        },
+        NoContext(nc) => {
+
+            for rka in nc {
+
+                let rpc_acc_info_req_cargo = RpcAccountInfoConfig {
+                    encoding: Some(UiAccountEncoding::JsonParsed),
+                    data_slice: None,
+                    commitment: Some(CommitmentConfig::confirmed()),
+                    min_context_slot: None,
+                };
+            
+                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await.unwrap();
+                
+                for fcc in fleet_current_cargo.value {
+
+                    let addr1 = match fcc.clone().account.data {
+                        Json(t) => {
+                            Some(t.program)
+                        }
+                        Binary(_1, _2) => {
+                            None
+                        },
+                        LegacyBinary(_1) => {
+                            None
+                        }
+                    };
+
+                    if addr1.is_some() {
+                        fleet_sub.account_address.push(addr1.unwrap());
+                    }
+
+                }
+
+            }
+
+        }
+    };
+
+    fleet_sub 
+
+}
+
+pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: UserFleetInstanceRequest) -> UserFleetInstanceResponse {
+
+    let pub_key = Pubkey::try_from(ufi.publicKey.as_str()).unwrap();
+
+    let rpc_acc_info_req_1 = RpcAccountInfoConfig {
+        encoding: Some(UiAccountEncoding::Base64),
+        data_slice: None,
+        commitment: Some(CommitmentConfig::confirmed()),
+        min_context_slot: None,
+    };
+
+    let fleet_acc_info = json_rpc_processor.get_account_info(&pub_key, Some(rpc_acc_info_req_1)).await.unwrap();
+    let res_fleet_acc_info = match fleet_acc_info.value.unwrap().data {
+        UiAccountData::Json(_) => None,
+        UiAccountData::LegacyBinary(blob) => None,
+        UiAccountData::Binary(blob, encoding) => match encoding {
+            UiAccountEncoding::Base58 => Some(blob),
+            UiAccountEncoding::Base64 => Some(blob),
+            UiAccountEncoding::Base64Zstd => Some(blob),
+            UiAccountEncoding::Binary | UiAccountEncoding::JsonParsed => None,
+        }
+    };
+
+    let rpc_token_account_filter = RpcTokenAccountsFilter::ProgramId("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA".to_string());
+
+    let rpc_acc_info_req_3 = RpcAccountInfoConfig {
+        encoding: Some(UiAccountEncoding::JsonParsed),
+        data_slice: None,
+        commitment: Some(CommitmentConfig::confirmed()),
+        min_context_slot: None,
+    };
+
+    let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(ufi.cargoHold.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_3)).await.unwrap();
+    let current_food_iter = fleet_current_cargo.value.iter().filter(|f| { f.pubkey == ufi.foodToken }).nth(0);
+    let mut amount_food: u64 = 0;
+    if current_food_iter.is_some() {
+        amount_food = match current_food_iter.unwrap().clone().account.data {
+            Json(t) => {
+                let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
+                af
+            }
+            Binary(_1, _2) => {
+                0
+            },
+            LegacyBinary(_1) => {
+                0
+            }
+        };
+    }
+
+    let current_sdu_iter = fleet_current_cargo.value.iter().filter(|f| { f.pubkey == ufi.sduToken }).nth(0);
+    let mut amount_sdu: u64 = 0;
+    if current_sdu_iter.is_some() {
+        amount_sdu = match current_sdu_iter.unwrap().clone().account.data {
+            Json(t) => {
+                let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
+                af
+            }
+            Binary(_1, _2) => {
+                0
+            },
+            LegacyBinary(_1) => {
+                0
+            }
+        };
+    }
+
+    let rpc_acc_info_req_4 = RpcAccountInfoConfig {
+        encoding: Some(UiAccountEncoding::JsonParsed),
+        data_slice: None,
+        commitment: Some(CommitmentConfig::confirmed()),
+        min_context_slot: None,
+    };
+
+    let fleet_current_fuel = json_rpc_processor.get_token_account_by_owner(ufi.fuelTank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_4)).await.unwrap();
+    let current_fuel_iter = fleet_current_fuel.value.iter().filter(|f| { f.pubkey == ufi.fuelToken }).nth(0);
+    let mut amount_fuel: u64 = 0;
+    if current_fuel_iter.is_some() {
+        amount_fuel = match current_fuel_iter.unwrap().clone().account.data {
+            Json(t) => {
+                let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
+                af
+            }
+            Binary(_1, _2) => {
+                0
+            },
+            LegacyBinary(_1) => {
+                0
+            }
+        };
+    }
+
+    let rpc_acc_info_req_5 = RpcAccountInfoConfig {
+        encoding: Some(UiAccountEncoding::JsonParsed),
+        data_slice: None,
+        commitment: Some(CommitmentConfig::confirmed()),
+        min_context_slot: None,
+    };
+
+    let fleet_current_ammo = json_rpc_processor.get_token_account_by_owner(ufi.ammoBank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_5)).await.unwrap();
+    let current_ammo_iter = fleet_current_ammo.value.iter().filter(|f| { f.pubkey == ufi.ammoToken }).nth(0);
+    let mut amount_ammo: u64 = 0;
+    if current_ammo_iter.is_some() {
+        amount_ammo = match current_ammo_iter.unwrap().clone().account.data {
+            Json(t) => {
+                let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
+                af
+            }
+            Binary(_1, _2) => {
+                0
+            },
+            LegacyBinary(_1) => {
+                0
+            }
+        };
+    }
+
+    let rpc_acc_info_req_2 = RpcAccountInfoConfig {
+        encoding: Some(UiAccountEncoding::Base64),
+        data_slice: None,
+        commitment: Some(CommitmentConfig::confirmed()),
+        min_context_slot: None,
+    };
+
+    let rpc_prog_info = RpcProgramAccountsConfig {
+        filters: Some(vec![
+            RpcFilterType::Memcmp(Memcmp::new(0, MemcmpEncodedBytes::Base58(String::from_str("UcyYNefQ2BW").unwrap()))),
+            RpcFilterType::Memcmp(Memcmp::new(41, MemcmpEncodedBytes::Base58(ufi.publicKey.to_string())))]),
+        account_config: rpc_acc_info_req_2,
+        with_context: None,
+        sort_results: None,
+    };
+
+    let starbase_player_cargo_holds = json_rpc_processor.get_program_accounts(&Pubkey::try_from("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk").unwrap(), Some(rpc_prog_info)).await.unwrap();
+
+    let mut vec_tokens: Vec<UserFleetCargoItem> = vec![];
+
+    let rp1 = match starbase_player_cargo_holds {
+
+        Context(ctx) => {
+            
+            for rka in ctx.value {
+
+                let rpc_acc_info_req_cargo = RpcAccountInfoConfig {
+                    encoding: Some(UiAccountEncoding::JsonParsed),
+                    data_slice: None,
+                    commitment: Some(CommitmentConfig::confirmed()),
+                    min_context_slot: None,
+                };
+            
+                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await.unwrap();
+                
+                for fcc in fleet_current_cargo.value {
+
+                    let amount_cargo = match fcc.clone().account.data {
+                        Json(t) => {
+                            let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
+                            let tm = t.parsed.get("info").unwrap().get("mint").unwrap().as_str().unwrap().to_string();
+                            (af, tm)
+                        }
+                        Binary(_1, _2) => {
+                            (0, "".to_string())
+                        },
+                        LegacyBinary(_1) => {
+                            (0, "".to_string())
+                        }
+                    };
+
+                    let ufci = UserFleetCargoItem {
+                        publicKey: fcc.pubkey,
+                        tokenAmount: amount_cargo.0,
+                        tokenMint: amount_cargo.1
+                    };
+
+                    vec_tokens.push(ufci);
+
+                }
+
+            }
+
+        },
+        NoContext(nc) => {
+
+            for rka in nc {
+
+                let rpc_acc_info_req_cargo = RpcAccountInfoConfig {
+                    encoding: Some(UiAccountEncoding::JsonParsed),
+                    data_slice: None,
+                    commitment: Some(CommitmentConfig::confirmed()),
+                    min_context_slot: None,
+                };
+            
+                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await.unwrap();
+                
+                for fcc in fleet_current_cargo.value {
+
+                    let amount_cargo = match fcc.clone().account.data {
+                        Json(t) => {
+                            let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
+                            let tm = t.parsed.get("info").unwrap().get("mint").unwrap().as_str().unwrap().to_string();
+                            (af, tm)
+                        }
+                        Binary(_1, _2) => {
+                            (0, "".to_string())
+                        },
+                        LegacyBinary(_1) => {
+                            (0, "".to_string())
+                        }
+                    };
+
+                    let ufci = UserFleetCargoItem {
+                        publicKey: fcc.pubkey,
+                        tokenAmount: amount_cargo.0,
+                        tokenMint: amount_cargo.1
+                    };
+
+                    vec_tokens.push(ufci);
+
+                }
+
+            }
+
+        }
+    };
+
+    let user_instance: UserFleetInstanceResponse = UserFleetInstanceResponse {
+        publicKey: pub_key.to_string(),
+        fleetAcctInfo: res_fleet_acc_info.unwrap(),
+        foodCnt: amount_food,
+        fuelCnt: amount_fuel,
+        ammoCnt: amount_ammo,
+        sduCnt: amount_sdu,
+        cargoHold: ufi.cargoHold.clone(),
+        fuelTank: ufi.fuelTank.clone(),
+        ammoBank: ufi.ammoBank.clone(),
+        foodToken: ufi.foodToken.clone(),
+        fuelToken: ufi.fuelToken.clone(),
+        ammoToken: ufi.ammoToken.clone(),
+        sduToken: ufi.sduToken.clone(),
+        fleetCargo: vec_tokens,
+    };
+
+    return user_instance;
+
+}
+
+#[tokio::main]
+pub async fn run(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) -> Result<(), Box<dyn std::error::Error>> {
+
+    log::info!("Starting sockerio server on 0.0.0.0:14655");
+
+    let request_processor = JsonRpcRequestProcessor::new(config, sol_client, state.clone());
+    
+    let (layer, io) = SocketIo::builder().with_state(UserCnt::new()).build_layer();
+
+    io.ns("/", |s: SocketRef| {
+
+        s.on(
+            "subscribeToFleetChange",
+            |s: SocketRef, Data::<String>(msg), user_cnt: State<UserCnt>| async move {
+
+                log::info!("[SOCKETIO] subscribeToFleetChange for id: {:?}", s.id.to_string());
+
+                user_cnt.add_user(s.id.to_string());
+                let ufi: UserFleetInstanceRequest = serde_json::from_str(&msg).unwrap();
+
+                let _1 = tokio::spawn(async move {
+
+                    let fleet_subscription = create_subscription_for_fleet(request_processor.clone(), ufi.clone()).await;
+                    set_mutex_fleet_sub(s.id.to_string(), fleet_subscription);
+                    run_subscription_fleet(state.clone(), s.id.to_string(), request_processor.clone(), ufi.clone(), s)
+                });  
+
+                
+            },
+        );
+
+        s.on_disconnect(
+            |s: SocketRef, user_cnt: State<UserCnt>| async move {
+
+                user_cnt.remove_user(s.id.to_string());
+                remove_mutex_fleet_sub(s.id.to_string());
+
+                log::info!("[SOCKETIO] on_disconnect for id: {:?}", s.id.to_string());
+
+            },
+        );
+
+    });
+
+    let app = axum::Router::new()
+        .fallback_service(ServeDir::new("dist"))
+        .layer(
+            ServiceBuilder::new()
+                .layer(CorsLayer::permissive()) // Enable CORS policy
+                .layer(layer),
+        );
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:14655").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+
+    Ok(())
+
+}

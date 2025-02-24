@@ -1,7 +1,14 @@
 use std::{sync::Arc, time::Duration};
-use crate::{cron::start_cron_scheduler::create_cron_scheduler, http::start_web_server::start_httpd, oracles::{create_rpc_server_oracle, create_token_list_oracle, handle_user_address_oracle}, solana_state::{self}, utils::types::{ events::*, structs::bot::Bot }};
+
+use crate::{cron::start_cron_scheduler::create_cron_scheduler, http::start_web_server, oracles::{
+    create_rpc_server_oracle, 
+    create_socketio_server_oracle, 
+    create_token_list_oracle, 
+    handle_user_address_oracle
+}, rpc::rpc_service::JsonRpcConfig, solana_state::{self}, utils::types::{ events::*, structs::bot::Bot }};
+
 use parking_lot::RwLock;
-use solana_client::rpc_client::RpcClient;
+use solana_client::{rpc_client::RpcClient, rpc_request::MAX_MULTIPLE_ACCOUNTS};
 use crate::oracles::create_subscription_oracle;
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 use tokio::{ signal, task };
@@ -42,9 +49,18 @@ pub async fn start() {
 
     create_subscription_oracle::run(arc_state.clone(), sol_client.clone(), String::from("sage")).await;
 
-    create_rpc_server_oracle::run(arc_state.clone(), sol_client.clone()).await;
+    let default_rpc_max_multiple_accounts = MAX_MULTIPLE_ACCOUNTS;
+    let config: JsonRpcConfig = JsonRpcConfig {
+        max_multiple_accounts: Some(default_rpc_max_multiple_accounts),
+        rpc_threads: 8,
+        rpc_niceness_adj: 0,
+    };
 
-    start_httpd();
+    create_rpc_server_oracle::run(config.clone(), arc_state.clone(), sol_client.clone()).await;
+
+    create_socketio_server_oracle::start_socketio_httpd(config.clone(), arc_state.clone(), sol_client.clone());
+
+    start_web_server::start_httpd();
 
     let _cron = create_cron_scheduler(arc_state.clone(), sol_client.clone()).await;
 

@@ -5,7 +5,7 @@ use crate::{rpc::rpc_service::{JsonRpcConfig, JsonRpcService}, solana_state::Sol
 
 pub const MAX_MULTIPLE_ACCOUNTS: usize = 100;
 
-pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) {
+pub async fn run(json_rpc_config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) {
 
 
     tokio::spawn(async move {
@@ -22,15 +22,9 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) {
             let rpc_port: u16 = 14555;
             let rpc_addr = SocketAddr::new(IpAddr::V4(rpc_bind_address), rpc_port);
         
-            let default_rpc_max_multiple_accounts = MAX_MULTIPLE_ACCOUNTS;
+            
         
-            let config: JsonRpcConfig = JsonRpcConfig {
-                max_multiple_accounts: Some(default_rpc_max_multiple_accounts),
-                rpc_threads: 8,
-                rpc_niceness_adj: 0,
-            };
-
-            let json_rpc_service = JsonRpcService::new(rpc_addr, config, local_state.clone(), local_sol_client.clone());
+            let json_rpc_service = JsonRpcService::new(rpc_addr, json_rpc_config.clone(), local_state.clone(), local_sol_client.clone());
             json_rpc_service.join().unwrap();
 
         }

@@ -43,8 +43,25 @@ pub fn set_mutex_fleet_sub(sub_name: String, lst_vec: FleetSubscription) {
 }
 
 pub fn remove_mutex_fleet_sub(sub_name: String) {
-    LIST_FLEET_SUBSCRIPTION.lock().remove(&sub_name.clone());
-    SPINLOCK_REFRESH_FLEET.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+    let all_keys_subs: Vec<String> = LIST_FLEET_SUBSCRIPTION.lock().iter().map(|f| { f.key().clone() }).collect();
+    for a in all_keys_subs {
+
+        if !a.starts_with(&sub_name) {
+            continue;
+        }
+
+        LIST_FLEET_SUBSCRIPTION.lock().remove(&a.clone());
+    }
+    
+    let all_keys_locks: Vec<String> = SPINLOCK_REFRESH_FLEET.lock().iter().map(|f| { f.key().clone() }).collect();
+    for a in all_keys_locks {
+
+        if !a.starts_with(&sub_name) {
+            continue;
+        }
+
+        SPINLOCK_REFRESH_FLEET.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+    }
 }
 
 pub fn get_mutex_fleet_sub(sub_name: String) -> FleetSubscription {
@@ -115,6 +132,8 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
     let local_arc = state.clone();
 
     let _1 = tokio::spawn(async move {
+
+        info!("starting yellowstone subscription for fleet {:?}", sub_name);
 
         loop {
 
@@ -679,16 +698,17 @@ pub async fn run(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_clie
             "subscribeToFleetChange",
             |s: SocketRef, Data::<String>(msg), user_cnt: State<UserCnt>| async move {
 
-                log::info!("[SOCKETIO] subscribeToFleetChange for id: {:?}", s.id.to_string());
-
                 user_cnt.add_user(s.id.to_string());
                 let ufi: UserFleetInstanceRequest = serde_json::from_str(&msg).unwrap();
+                let key = s.id.to_string() + "-" + &ufi.publicKey;
 
-                let _1 = tokio::spawn(async move {
+                log::info!("[SOCKETIO] subscribeToFleetChange for id: {:?}", key);
+
+                tokio::spawn(async move {
 
                     let fleet_subscription = create_subscription_for_fleet(request_processor.clone(), ufi.clone()).await;
-                    set_mutex_fleet_sub(s.id.to_string(), fleet_subscription);
-                    run_subscription_fleet(state.clone(), s.id.to_string(), request_processor.clone(), ufi.clone(), s)
+                    set_mutex_fleet_sub(key.clone(), fleet_subscription);
+                    run_subscription_fleet(state.clone(), key.clone(), request_processor.clone(), ufi.clone(), s)
                 });  
 
                 

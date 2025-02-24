@@ -611,6 +611,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
     if current_food_iter.is_some() {
         amount_food = match current_food_iter.unwrap().clone().account.data {
             Json(t) => {
+                log::info!("parsed_account: {:?}", t.parsed);
                 let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
                 af
             }

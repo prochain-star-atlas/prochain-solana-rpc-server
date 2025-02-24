@@ -130,15 +130,18 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
 
     let sub_name_local = sub_name.clone();
     let local_arc = state.clone();
+    let local_socket = s.clone();
+    let local_ufi = ufi.clone();
+    let local_json_rpc_processor = json_rpc_processor.clone();
 
     let _1 = tokio::spawn(async move {
 
-        info!("starting yellowstone subscription for fleet {:?}", sub_name);
+        info!("starting yellowstone subscription for fleet account {:?}", sub_name_local);
 
         loop {
 
             if get_mutex_spinlock_fleet_sub(sub_name_local.clone()).swap(0, Ordering::Relaxed) == 1 {
-                info!("stopping yellowstone subscription for fleet get_mutex_spinlock_fleet_sub {:?}", sub_name);
+                info!("stopping yellowstone subscription for fleet get_mutex_spinlock_fleet_sub account {:?}", sub_name_local);
                 break;
             }
             
@@ -149,9 +152,9 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
             let sub_fleet = get_mutex_fleet_sub(sub_name_local.clone());
 
             let mut hp = HashMap::new();
-            hp.insert(sub_name_local.clone()[..30].to_string(), SubscribeRequestFilterAccounts {
+            hp.insert(sub_name_local.clone()[..20].to_string() + "_fleet_acc", SubscribeRequestFilterAccounts {
                 account: sub_fleet.account_address,
-                owner: sub_fleet.owner_address,
+                owner: vec![],
                 filters: vec![],
                 nonempty_txn_signature: None
             });
@@ -176,7 +179,7 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
             while let Some(message) = stream.next().await {
 
                 if get_mutex_spinlock_fleet_sub(sub_name_local.clone()).swap(0, Ordering::Relaxed) == 1 {
-                    info!("stopping yellowstone subscription for fleet get_mutex_spinlock_fleet_sub {:?}", sub_name);
+                    info!("stopping yellowstone subscription for fleet get_mutex_spinlock_fleet_sub account {:?}", sub_name_local.clone());
                     break;
                 }
 
@@ -187,7 +190,7 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
 
                                 if let Some(acc) = tx.account {
 
-                                    log::info!("fleet account {:?}", ufi.clone().publicKey);
+                                    log::info!("fleet account {:?}", local_ufi.clone().publicKey);
 
                                     if acc.lamports == 0 {
                                         local_arc.clean_zero_account(Pubkey::from_str(String::from_utf8(acc.pubkey.clone()).unwrap_or_default().as_str()).unwrap_or_default());
@@ -195,11 +198,118 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
                                         local_arc.handle_account_update(acc);
                                     }
 
-                                    let fleet_refreshed = refresh_fleet(json_rpc_processor.clone(), ufi.clone()).await;
+                                    let fleet_refreshed = refresh_fleet(local_json_rpc_processor.clone(), local_ufi.clone()).await;
                                     if fleet_refreshed.is_ok() {
                                         let fleet_refreshed_json = serde_json::to_string(&fleet_refreshed.unwrap());
                                         if fleet_refreshed_json.is_ok() {
-                                            let _ = s.emit("userfleet_refreshed", &fleet_refreshed_json.unwrap());
+                                            let _ = local_socket.emit("userfleet_refreshed", &fleet_refreshed_json.unwrap());
+                                            log::info!("fleet updated {:?}", local_ufi.clone().publicKey);
+                                        } else {
+                                            log::error!("userfleet_refreshed error {:?}", fleet_refreshed_json.err());
+                                        }
+                                    } else {
+                                        log::error!("fleet update error {:?}", fleet_refreshed.err());
+                                    }
+
+                                                                        
+                                }
+
+                            }
+                            _ => {}
+                        }
+                    }
+                    Err(error) => {
+                        error!("stream error: {error:?}");
+                        break;
+                    }
+                }
+            
+            }
+
+            let _1 = subscribe_tx.close().await.unwrap();
+            info!("closing yellowstone subscription for fleets account ...");
+
+        } // end of loop
+
+        info!("stopping yellowstone subscription for fleet account {:?}", sub_name_local);
+
+    });   
+
+    let sub_name_local_2 = sub_name.clone();
+    let local_arc_2 = state.clone();
+    let local_socket_2 = s.clone();
+    let local_ufi_2 = ufi.clone();
+    let local_json_rpc_processor_2 = json_rpc_processor.clone();
+
+    let _2 = tokio::spawn(async move {
+
+        info!("starting yellowstone subscription for fleet owner {:?}", sub_name);
+
+        loop {
+
+            if get_mutex_spinlock_fleet_sub(sub_name_local_2.clone()).swap(0, Ordering::Relaxed) == 1 {
+                info!("stopping yellowstone subscription for fleet get_mutex_spinlock_fleet_sub owner {:?}", sub_name_local_2);
+                break;
+            }
+            
+            let mut client = GeyserGrpcClient::build_from_shared(String::from("http://192.168.100.98:10000")).unwrap().connect().await.unwrap();
+
+            let (mut subscribe_tx, mut stream) = client.subscribe().await.unwrap();           
+
+            let sub_fleet = get_mutex_fleet_sub(sub_name_local_2.clone());
+
+            let mut hp = HashMap::new();
+            hp.insert(sub_name_local_2.clone()[..20].to_string() + "_fleet_own", SubscribeRequestFilterAccounts {
+                account: vec![],
+                owner: sub_fleet.owner_address,
+                filters: vec![],
+                nonempty_txn_signature: None
+            });
+
+            let _res = subscribe_tx
+                .send(SubscribeRequest {
+                    slots: HashMap::new(),
+                    accounts: hp,
+                    transactions: HashMap::new(),
+                    transactions_status: HashMap::new(),
+                    entry: HashMap::new(),
+                    blocks: HashMap::new(),
+                    blocks_meta: hashmap! { "".to_owned() => SubscribeRequestFilterBlocksMeta {} },
+                    commitment: Some(1 as i32),
+                    accounts_data_slice: vec![],
+                    ping: None,
+                })
+                .await;
+
+            _res.unwrap();
+
+            while let Some(message) = stream.next().await {
+
+                if get_mutex_spinlock_fleet_sub(sub_name_local_2.clone()).swap(0, Ordering::Relaxed) == 1 {
+                    info!("stopping yellowstone subscription for fleet get_mutex_spinlock_fleet_sub {:?}", sub_name_local_2);
+                    break;
+                }
+
+                match message {
+                    Ok(msg) => {
+                        match msg.update_oneof {
+                            Some(UpdateOneof::Account(tx)) => {
+
+                                if let Some(acc) = tx.account {
+
+                                    log::info!("fleet account {:?}", local_ufi_2.clone().publicKey);
+
+                                    if acc.lamports == 0 {
+                                        local_arc_2.clean_zero_account(Pubkey::from_str(String::from_utf8(acc.pubkey.clone()).unwrap_or_default().as_str()).unwrap_or_default());
+                                    } else {
+                                        local_arc_2.handle_account_update(acc);
+                                    }
+
+                                    let fleet_refreshed = refresh_fleet(local_json_rpc_processor_2.clone(), local_ufi_2.clone()).await;
+                                    if fleet_refreshed.is_ok() {
+                                        let fleet_refreshed_json = serde_json::to_string(&fleet_refreshed.unwrap());
+                                        if fleet_refreshed_json.is_ok() {
+                                            let _ = local_socket_2.emit("userfleet_refreshed", &fleet_refreshed_json.unwrap());
                                             log::info!("fleet updated {:?}", ufi.clone().publicKey);
                                         } else {
                                             log::error!("userfleet_refreshed error {:?}", fleet_refreshed_json.err());
@@ -224,13 +334,15 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
             }
 
             let _1 = subscribe_tx.close().await.unwrap();
-            info!("closing yellowstone subscription for fleets ...");
+            info!("closing yellowstone subscription for fleets owner ...");
 
         } // end of loop
 
-    });   
+        info!("stopping yellowstone subscription for fleet owner {:?}", sub_name_local_2);
+        
+    }); 
 
-    let _set_j = vec![_1];
+    let _set_j = vec![_1, _2];
 
 }
 

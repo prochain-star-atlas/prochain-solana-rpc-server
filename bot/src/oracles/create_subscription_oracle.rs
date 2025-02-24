@@ -352,7 +352,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
             _res.unwrap();
 
-            let mut counter_int = 0;
+            let mut counter_int_2 = 0;
             let mut showlog = false;
 
             while let Some(message) = stream.next().await {
@@ -362,8 +362,8 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                 if date_now.second() == 0 {
                     if showlog {
                         showlog = false;
-                        info!("[PERF] update from yellowstone rpc subscription by owner, accounts: {}", counter_int);
-                        counter_int = 0;
+                        info!("[PERF] update from yellowstone rpc subscription by owner, accounts: {}", counter_int_2);
+                        counter_int_2 = 0;
                     }
                 } else {
                     showlog = true;
@@ -377,7 +377,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                     Ok(msg) => {
                         match msg.update_oneof {
                             Some(UpdateOneof::Account(tx)) => {
-                                counter_int = counter_int + 1;
+                                counter_int_2 = counter_int_2 + 1;
 
                                 if let Some(acc) = tx.account {
                                     if acc.lamports == 0 {
@@ -458,7 +458,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
             _res.unwrap();
 
-            let mut counter_int = 0;
+            let mut counter_int_3 = 0;
             let mut showlog = false;
 
             while let Some(message) = stream.next().await {
@@ -468,8 +468,8 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                 if date_now.second() == 0 {
                     if showlog {
                         showlog = false;
-                        info!("[PERF] update from yellowstone rpc subscription by token owner: {}", counter_int);
-                        counter_int = 0;
+                        info!("[PERF] update from yellowstone rpc subscription by token owner: {}", counter_int_3);
+                        counter_int_3 = 0;
                     }
                 } else {
                     showlog = true;
@@ -483,7 +483,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                     Ok(msg) => {
                         match msg.update_oneof {
                             Some(UpdateOneof::Account(tx)) => {
-                                counter_int = counter_int + 1;
+                                counter_int_3 = counter_int_3 + 1;
 
                                 if let Some(acc) = tx.account {
                                     if acc.lamports == 0 {
@@ -564,7 +564,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
             _res.unwrap();
 
-            let mut counter_int = 0;
+            let mut counter_int_4 = 0;
             let mut showlog = false;
 
             while let Some(message) = stream.next().await {
@@ -574,8 +574,8 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                 if date_now.second() == 0 {
                     if showlog {
                         showlog = false;
-                        info!("[PERF] update from yellowstone rpc subscription by token accounts: {}", counter_int);
-                        counter_int = 0;
+                        info!("[PERF] update from yellowstone rpc subscription by token accounts: {}", counter_int_4);
+                        counter_int_4 = 0;
                     }
                 } else {
                     showlog = true;
@@ -589,7 +589,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                     Ok(msg) => {
                         match msg.update_oneof {
                             Some(UpdateOneof::Account(tx)) => {
-                                counter_int = counter_int + 1;
+                                counter_int_4 = counter_int_4 + 1;
 
                                 if let Some(acc) = tx.account {
                                     if acc.lamports == 0 {
@@ -670,7 +670,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
             _res.unwrap();
 
-            let mut counter_int = 0;
+            let mut counter_int_5 = 0;
             let mut showlog = false;
 
             while let Some(message) = stream.next().await {
@@ -680,8 +680,8 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                 if date_now.second() == 0 {
                     if showlog {
                         showlog = false;
-                        info!("[PERF] update from yellowstone rpc subscription by token accounts: {}", counter_int);
-                        counter_int = 0;
+                        info!("[PERF] update from yellowstone rpc subscription by token accounts: {}", counter_int_5);
+                        counter_int_5 = 0;
                     }
                 } else {
                     showlog = true;
@@ -695,7 +695,7 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
                     Ok(msg) => {
                         match msg.update_oneof {
                             Some(UpdateOneof::Account(tx)) => {
-                                counter_int = counter_int + 1;
+                                counter_int_5 = counter_int_5 + 1;
 
                                 if let Some(acc) = tx.account {
                                     if acc.lamports == 0 {
@@ -737,18 +737,4 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
 
     //futures::future::join_all(set_j).await;
 
-}
-
-
-pub fn intersection(nums: Vec<Vec<String>>) -> Vec<String> {
-    let mut intersect_result: Vec<String> = nums[0].clone();
-
-    for temp_vec in nums {
-        let unique_a: HashSet<String> = temp_vec.into_iter().collect();
-        intersect_result = unique_a
-            .intersection(&intersect_result.into_iter().collect())
-            .map(|i| i.clone())
-            .collect::<Vec<_>>();
-    }
-    intersect_result
 }

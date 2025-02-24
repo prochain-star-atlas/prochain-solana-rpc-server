@@ -192,10 +192,14 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
                                     }
 
                                     let fleet_refreshed = refresh_fleet(json_rpc_processor.clone(), ufi.clone()).await;
-                                    let fleet_refreshed_json = serde_json::to_string(&fleet_refreshed);
-                                    if fleet_refreshed_json.is_ok() {
-                                        let _ = s.emit("userfleet_refreshed", &fleet_refreshed_json.unwrap());
+                                    if fleet_refreshed.is_ok() {
+                                        let fleet_refreshed_json = serde_json::to_string(&fleet_refreshed.unwrap());
+                                        if fleet_refreshed_json.is_ok() {
+                                            let _ = s.emit("userfleet_refreshed", &fleet_refreshed_json.unwrap());
+                                            info!("fleet updated {:?}", ufi.clone().publicKey);
+                                        }
                                     }
+
                                                                         
                                 }
 
@@ -222,10 +226,10 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
 
 }
 
-pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: UserFleetInstanceRequest) -> FleetSubscription {
+pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: UserFleetInstanceRequest) -> Result<FleetSubscription, anyhow::Error> {
 
     let mut fleet_sub = FleetSubscription { account_address: vec![], owner_address: vec![] };
-    let pub_key = Pubkey::try_from(ufi.publicKey.as_str()).unwrap();
+    let pub_key = Pubkey::try_from(ufi.publicKey.as_str())?;
 
     fleet_sub.account_address.push(pub_key.to_string());
     fleet_sub.owner_address.push(pub_key.to_string());
@@ -240,7 +244,7 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
     };
 
     fleet_sub.owner_address.push(ufi.cargoHold.clone());
-    let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(ufi.cargoHold.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_3)).await.unwrap();
+    let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(ufi.cargoHold.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_3)).await?;
     let current_food_iter = fleet_current_cargo.value.iter().filter(|f| { f.pubkey == ufi.foodToken }).nth(0);
     if current_food_iter.is_some() {
 
@@ -287,7 +291,7 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
     };
 
     fleet_sub.owner_address.push(ufi.fuelTank.clone());
-    let fleet_current_fuel = json_rpc_processor.get_token_account_by_owner(ufi.fuelTank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_4)).await.unwrap();
+    let fleet_current_fuel = json_rpc_processor.get_token_account_by_owner(ufi.fuelTank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_4)).await?;
     let current_fuel_iter = fleet_current_fuel.value.iter().filter(|f| { f.pubkey == ufi.fuelToken }).nth(0);
     if current_fuel_iter.is_some() {
 
@@ -317,7 +321,7 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
     };
 
     fleet_sub.owner_address.push(ufi.ammoBank.clone());
-    let fleet_current_ammo = json_rpc_processor.get_token_account_by_owner(ufi.ammoBank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_5)).await.unwrap();
+    let fleet_current_ammo = json_rpc_processor.get_token_account_by_owner(ufi.ammoBank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_5)).await?;
     let current_ammo_iter = fleet_current_ammo.value.iter().filter(|f| { f.pubkey == ufi.ammoToken }).nth(0);
     if current_ammo_iter.is_some() {
 
@@ -348,14 +352,14 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
 
     let rpc_prog_info = RpcProgramAccountsConfig {
         filters: Some(vec![
-            RpcFilterType::Memcmp(Memcmp::new(0, MemcmpEncodedBytes::Base58(String::from_str("UcyYNefQ2BW").unwrap()))),
+            RpcFilterType::Memcmp(Memcmp::new(0, MemcmpEncodedBytes::Base58(String::from_str("UcyYNefQ2BW")?))),
             RpcFilterType::Memcmp(Memcmp::new(41, MemcmpEncodedBytes::Base58(ufi.publicKey.to_string())))]),
         account_config: rpc_acc_info_req_2,
         with_context: None,
         sort_results: None,
     };
 
-    let starbase_player_cargo_holds = json_rpc_processor.get_program_accounts(&Pubkey::try_from("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk").unwrap(), Some(rpc_prog_info)).await.unwrap();
+    let starbase_player_cargo_holds = json_rpc_processor.get_program_accounts(&Pubkey::try_from("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk")?, Some(rpc_prog_info)).await?;
 
     let rp1 = match starbase_player_cargo_holds {
 
@@ -370,7 +374,7 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
                     min_context_slot: None,
                 };
             
-                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await.unwrap();
+                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await?;
                 
                 for fcc in fleet_current_cargo.value {
 
@@ -406,7 +410,7 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
                     min_context_slot: None,
                 };
             
-                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await.unwrap();
+                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await?;
                 
                 for fcc in fleet_current_cargo.value {
 
@@ -433,13 +437,13 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
         }
     };
 
-    fleet_sub 
+    Ok(fleet_sub) 
 
 }
 
-pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: UserFleetInstanceRequest) -> UserFleetInstanceResponse {
+pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: UserFleetInstanceRequest) -> Result<UserFleetInstanceResponse, anyhow::Error> {
 
-    let pub_key = Pubkey::try_from(ufi.publicKey.as_str()).unwrap();
+    let pub_key = Pubkey::try_from(ufi.publicKey.as_str())?;
 
     let rpc_acc_info_req_1 = RpcAccountInfoConfig {
         encoding: Some(UiAccountEncoding::Base64),
@@ -448,7 +452,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
         min_context_slot: None,
     };
 
-    let fleet_acc_info = json_rpc_processor.get_account_info(&pub_key, Some(rpc_acc_info_req_1)).await.unwrap();
+    let fleet_acc_info = json_rpc_processor.get_account_info(&pub_key, Some(rpc_acc_info_req_1)).await?;
     let res_fleet_acc_info = match fleet_acc_info.value.unwrap().data {
         UiAccountData::Json(_) => None,
         UiAccountData::LegacyBinary(blob) => None,
@@ -469,7 +473,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
         min_context_slot: None,
     };
 
-    let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(ufi.cargoHold.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_3)).await.unwrap();
+    let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(ufi.cargoHold.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_3)).await?;
     let current_food_iter = fleet_current_cargo.value.iter().filter(|f| { f.pubkey == ufi.foodToken }).nth(0);
     let mut amount_food: u64 = 0;
     if current_food_iter.is_some() {
@@ -511,7 +515,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
         min_context_slot: None,
     };
 
-    let fleet_current_fuel = json_rpc_processor.get_token_account_by_owner(ufi.fuelTank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_4)).await.unwrap();
+    let fleet_current_fuel = json_rpc_processor.get_token_account_by_owner(ufi.fuelTank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_4)).await?;
     let current_fuel_iter = fleet_current_fuel.value.iter().filter(|f| { f.pubkey == ufi.fuelToken }).nth(0);
     let mut amount_fuel: u64 = 0;
     if current_fuel_iter.is_some() {
@@ -536,7 +540,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
         min_context_slot: None,
     };
 
-    let fleet_current_ammo = json_rpc_processor.get_token_account_by_owner(ufi.ammoBank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_5)).await.unwrap();
+    let fleet_current_ammo = json_rpc_processor.get_token_account_by_owner(ufi.ammoBank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_5)).await?;
     let current_ammo_iter = fleet_current_ammo.value.iter().filter(|f| { f.pubkey == ufi.ammoToken }).nth(0);
     let mut amount_ammo: u64 = 0;
     if current_ammo_iter.is_some() {
@@ -570,7 +574,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
         sort_results: None,
     };
 
-    let starbase_player_cargo_holds = json_rpc_processor.get_program_accounts(&Pubkey::try_from("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk").unwrap(), Some(rpc_prog_info)).await.unwrap();
+    let starbase_player_cargo_holds = json_rpc_processor.get_program_accounts(&Pubkey::try_from("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk").unwrap(), Some(rpc_prog_info)).await?;
 
     let mut vec_tokens: Vec<UserFleetCargoItem> = vec![];
 
@@ -587,7 +591,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
                     min_context_slot: None,
                 };
             
-                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await.unwrap();
+                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await?;
                 
                 for fcc in fleet_current_cargo.value {
 
@@ -629,7 +633,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
                     min_context_slot: None,
                 };
             
-                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await.unwrap();
+                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await?;
                 
                 for fcc in fleet_current_cargo.value {
 
@@ -679,7 +683,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
         fleetCargo: vec_tokens,
     };
 
-    return user_instance;
+    return Ok(user_instance);
 
 }
 
@@ -707,8 +711,13 @@ pub async fn run(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_clie
                 tokio::spawn(async move {
 
                     let fleet_subscription = create_subscription_for_fleet(request_processor.clone(), ufi.clone()).await;
-                    set_mutex_fleet_sub(key.clone(), fleet_subscription);
-                    run_subscription_fleet(state.clone(), key.clone(), request_processor.clone(), ufi.clone(), s)
+                    if fleet_subscription.is_ok() {
+                        set_mutex_fleet_sub(key.clone(), fleet_subscription.unwrap());
+                        let _res = run_subscription_fleet(state.clone(), key.clone(), request_processor.clone(), ufi.clone(), s).await;
+                    } else {
+                        log::error!("Error creating the fleet subscription {:?}", ufi.clone().publicKey);
+                    }
+
                 });  
 
                 

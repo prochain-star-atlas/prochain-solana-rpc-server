@@ -1,12 +1,13 @@
 use std::{collections::HashMap, str::FromStr, sync::atomic::AtomicUsize};
 
+use bigdecimal::ToPrimitive;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use socketioxide::{
     extract::{Data, SocketRef, State},
     SocketIo,
 };
-use solana_account_decoder::{UiAccountData, UiAccountEncoding};
+use solana_account_decoder::{parse_token::UiTokenAccount, UiAccountData, UiAccountEncoding};
 use solana_client::{rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig, RpcTokenAccountsFilter}, rpc_filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType}};
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 use std::sync::Arc;
@@ -611,9 +612,8 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
     if current_food_iter.is_some() {
         amount_food = match current_food_iter.unwrap().clone().account.data {
             Json(t) => {
-                log::info!("parsed_account: {:?}", t.parsed);
-                let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
-                af
+                let deserialized_token_account: UiTokenAccount = serde_json::from_value(t.parsed.get("info").unwrap().clone()).unwrap();
+                deserialized_token_account.token_amount.ui_amount.unwrap().to_u64().unwrap()
             }
             Binary(_1, _2) => {
                 0
@@ -629,8 +629,8 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
     if current_sdu_iter.is_some() {
         amount_sdu = match current_sdu_iter.unwrap().clone().account.data {
             Json(t) => {
-                let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
-                af
+                let deserialized_token_account: UiTokenAccount = serde_json::from_value(t.parsed.get("info").unwrap().clone()).unwrap();
+                deserialized_token_account.token_amount.ui_amount.unwrap().to_u64().unwrap()
             }
             Binary(_1, _2) => {
                 0
@@ -654,8 +654,8 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
     if current_fuel_iter.is_some() {
         amount_fuel = match current_fuel_iter.unwrap().clone().account.data {
             Json(t) => {
-                let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
-                af
+                let deserialized_token_account: UiTokenAccount = serde_json::from_value(t.parsed.get("info").unwrap().clone()).unwrap();
+                deserialized_token_account.token_amount.ui_amount.unwrap().to_u64().unwrap()
             }
             Binary(_1, _2) => {
                 0
@@ -679,8 +679,8 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
     if current_ammo_iter.is_some() {
         amount_ammo = match current_ammo_iter.unwrap().clone().account.data {
             Json(t) => {
-                let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
-                af
+                let deserialized_token_account: UiTokenAccount = serde_json::from_value(t.parsed.get("info").unwrap().clone()).unwrap();
+                deserialized_token_account.token_amount.ui_amount.unwrap().to_u64().unwrap()
             }
             Binary(_1, _2) => {
                 0
@@ -730,9 +730,9 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
 
                     let amount_cargo = match fcc.clone().account.data {
                         Json(t) => {
-                            let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
-                            let tm = t.parsed.get("info").unwrap().get("mint").unwrap().as_str().unwrap().to_string();
-                            (af, tm)
+                            let deserialized_token_account: UiTokenAccount = serde_json::from_value(t.parsed.get("info").unwrap().clone()).unwrap();
+                            let res1 = deserialized_token_account.token_amount.ui_amount.unwrap().to_u64().unwrap();
+                            (res1, deserialized_token_account.mint)
                         }
                         Binary(_1, _2) => {
                             (0, "".to_string())
@@ -772,9 +772,9 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
 
                     let amount_cargo = match fcc.clone().account.data {
                         Json(t) => {
-                            let af = t.parsed.get("info").unwrap().get("tokenAmount").unwrap().get("uiAmount").unwrap().as_u64().unwrap();
-                            let tm = t.parsed.get("info").unwrap().get("mint").unwrap().as_str().unwrap().to_string();
-                            (af, tm)
+                            let deserialized_token_account: UiTokenAccount = serde_json::from_value(t.parsed.get("info").unwrap().clone()).unwrap();
+                            let res1 = deserialized_token_account.token_amount.ui_amount.unwrap().to_u64().unwrap();
+                            (res1, deserialized_token_account.mint)
                         }
                         Binary(_1, _2) => {
                             (0, "".to_string())

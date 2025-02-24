@@ -93,7 +93,7 @@ pub fn start_socketio_httpd(config: JsonRpcConfig, state: Arc<SolanaStateManager
 
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FleetSubscription {
     account_address: Vec<String>,
     owner_address: Vec<String>
@@ -435,6 +435,8 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
 
         }
     };
+
+    log::info!("fleet_sub: {:?}", fleet_sub);
 
     Ok(fleet_sub) 
 

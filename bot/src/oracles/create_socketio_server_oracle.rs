@@ -148,7 +148,7 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
             let sub_fleet = get_mutex_fleet_sub(sub_name_local.clone());
 
             let mut hp = HashMap::new();
-            hp.insert(sub_name_local.clone() + "_fleet_account", SubscribeRequestFilterAccounts {
+            hp.insert(sub_name_local.clone()[..30].to_string(), SubscribeRequestFilterAccounts {
                 account: sub_fleet.account_address,
                 owner: sub_fleet.owner_address,
                 filters: vec![],

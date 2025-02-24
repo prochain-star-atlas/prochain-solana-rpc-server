@@ -138,6 +138,7 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
         loop {
 
             if get_mutex_spinlock_fleet_sub(sub_name_local.clone()).swap(0, Ordering::Relaxed) == 1 {
+                info!("stopping yellowstone subscription for fleet get_mutex_spinlock_fleet_sub {:?}", sub_name);
                 break;
             }
             
@@ -175,6 +176,7 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
             while let Some(message) = stream.next().await {
 
                 if get_mutex_spinlock_fleet_sub(sub_name_local.clone()).swap(0, Ordering::Relaxed) == 1 {
+                    info!("stopping yellowstone subscription for fleet get_mutex_spinlock_fleet_sub {:?}", sub_name);
                     break;
                 }
 
@@ -184,6 +186,8 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
                             Some(UpdateOneof::Account(tx)) => {
 
                                 if let Some(acc) = tx.account {
+
+                                    log::info!("fleet account {:?}", ufi.clone().publicKey);
 
                                     if acc.lamports == 0 {
                                         local_arc.clean_zero_account(Pubkey::from_str(String::from_utf8(acc.pubkey.clone()).unwrap_or_default().as_str()).unwrap_or_default());

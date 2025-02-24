@@ -196,8 +196,12 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
                                         let fleet_refreshed_json = serde_json::to_string(&fleet_refreshed.unwrap());
                                         if fleet_refreshed_json.is_ok() {
                                             let _ = s.emit("userfleet_refreshed", &fleet_refreshed_json.unwrap());
-                                            info!("fleet updated {:?}", ufi.clone().publicKey);
+                                            log::info!("fleet updated {:?}", ufi.clone().publicKey);
+                                        } else {
+                                            log::error!("userfleet_refreshed error {:?}", fleet_refreshed_json.err());
                                         }
+                                    } else {
+                                        log::error!("fleet update error {:?}", fleet_refreshed.err());
                                     }
 
                                                                         

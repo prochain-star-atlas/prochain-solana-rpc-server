@@ -243,104 +243,111 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
     };
 
     fleet_sub.owner_address.push(ufi.cargoHold.clone());
-    let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(ufi.cargoHold.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_3)).await?;
-    let current_food_iter = fleet_current_cargo.value.iter().filter(|f| { f.pubkey == ufi.foodToken }).nth(0);
-    if current_food_iter.is_some() {
+    fleet_sub.account_address.push(ufi.foodToken);
+    fleet_sub.account_address.push(ufi.sduToken);
 
-        let addr1 = match current_food_iter.unwrap().clone().account.data {
-            Json(t) => {
-                Some(t.program)
-            }
-            Binary(_1, _2) => None,
-            LegacyBinary(_1) => None
-        };
+    // let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(ufi.cargoHold.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_3)).await?;
+    // let current_food_iter = fleet_current_cargo.value.iter().filter(|f| { f.pubkey == ufi.foodToken }).nth(0);
+    // if current_food_iter.is_some() {
 
-        if addr1.is_some() {
-            fleet_sub.account_address.push(addr1.unwrap());
-        }
+    //     let addr1 = match current_food_iter.unwrap().clone().account.data {
+    //         Json(t) => {
+    //             Some(t.parsed)
+    //         }
+    //         Binary(_1, _2) => None,
+    //         LegacyBinary(_1) => None
+    //     };
+
+    //     if addr1.is_some() {
+    //         fleet_sub.account_address.push(ufi.foodToken);
+    //     }
         
-    }
+    // }
 
-    let current_sdu_iter = fleet_current_cargo.value.iter().filter(|f| { f.pubkey == ufi.sduToken }).nth(0);
-    if current_sdu_iter.is_some() {
+    // let current_sdu_iter = fleet_current_cargo.value.iter().filter(|f| { f.pubkey == ufi.sduToken }).nth(0);
+    // if current_sdu_iter.is_some() {
 
-        let addr1 = match current_sdu_iter.unwrap().clone().account.data {
-            Json(t) => {
-                Some(t.program)
-            }
-            Binary(_1, _2) => {
-                None
-            },
-            LegacyBinary(_1) => {
-                None
-            }
-        };
+    //     let addr1 = match current_sdu_iter.unwrap().clone().account.data {
+    //         Json(t) => {
+    //             Some(t.program)
+    //         }
+    //         Binary(_1, _2) => {
+    //             None
+    //         },
+    //         LegacyBinary(_1) => {
+    //             None
+    //         }
+    //     };
 
-        if addr1.is_some() {
-            fleet_sub.account_address.push(addr1.unwrap());
-        }
+    //     if addr1.is_some() {
+    //         fleet_sub.account_address.push(addr1.unwrap());
+    //     }
 
-    }
+    // }
 
-    let rpc_acc_info_req_4 = RpcAccountInfoConfig {
-        encoding: Some(UiAccountEncoding::JsonParsed),
-        data_slice: None,
-        commitment: Some(CommitmentConfig::confirmed()),
-        min_context_slot: None,
-    };
+    // let rpc_acc_info_req_4 = RpcAccountInfoConfig {
+    //     encoding: Some(UiAccountEncoding::JsonParsed),
+    //     data_slice: None,
+    //     commitment: Some(CommitmentConfig::confirmed()),
+    //     min_context_slot: None,
+    // };
 
     fleet_sub.owner_address.push(ufi.fuelTank.clone());
-    let fleet_current_fuel = json_rpc_processor.get_token_account_by_owner(ufi.fuelTank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_4)).await?;
-    let current_fuel_iter = fleet_current_fuel.value.iter().filter(|f| { f.pubkey == ufi.fuelToken }).nth(0);
-    if current_fuel_iter.is_some() {
+    fleet_sub.account_address.push(ufi.fuelToken);
 
-        let addr1 = match current_fuel_iter.unwrap().clone().account.data {
-            Json(t) => {
-                Some(t.program)
-            }
-            Binary(_1, _2) => {
-                None
-            },
-            LegacyBinary(_1) => {
-                None
-            }
-        };
+    // let fleet_current_fuel = json_rpc_processor.get_token_account_by_owner(ufi.fuelTank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_4)).await?;
+    // let current_fuel_iter = fleet_current_fuel.value.iter().filter(|f| { f.pubkey == ufi.fuelToken }).nth(0);
+    // if current_fuel_iter.is_some() {
 
-        if addr1.is_some() {
-            fleet_sub.account_address.push(addr1.unwrap());
-        }
+    //     let addr1 = match current_fuel_iter.unwrap().clone().account.data {
+    //         Json(t) => {
+    //             Some(t.program)
+    //         }
+    //         Binary(_1, _2) => {
+    //             None
+    //         },
+    //         LegacyBinary(_1) => {
+    //             None
+    //         }
+    //     };
 
-    }
+    //     if addr1.is_some() {
+    //         fleet_sub.account_address.push(addr1.unwrap());
+    //     }
 
-    let rpc_acc_info_req_5 = RpcAccountInfoConfig {
-        encoding: Some(UiAccountEncoding::JsonParsed),
-        data_slice: None,
-        commitment: Some(CommitmentConfig::confirmed()),
-        min_context_slot: None,
-    };
+    // }
+
+    // let rpc_acc_info_req_5 = RpcAccountInfoConfig {
+    //     encoding: Some(UiAccountEncoding::JsonParsed),
+    //     data_slice: None,
+    //     commitment: Some(CommitmentConfig::confirmed()),
+    //     min_context_slot: None,
+    // };
 
     fleet_sub.owner_address.push(ufi.ammoBank.clone());
-    let fleet_current_ammo = json_rpc_processor.get_token_account_by_owner(ufi.ammoBank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_5)).await?;
-    let current_ammo_iter = fleet_current_ammo.value.iter().filter(|f| { f.pubkey == ufi.ammoToken }).nth(0);
-    if current_ammo_iter.is_some() {
+    fleet_sub.account_address.push(ufi.ammoToken);
 
-        let addr1 = match current_ammo_iter.unwrap().clone().account.data {
-            Json(t) => {
-                Some(t.program)
-            }
-            Binary(_1, _2) => {
-                None
-            },
-            LegacyBinary(_1) => {
-                None
-            }
-        };
+    // let fleet_current_ammo = json_rpc_processor.get_token_account_by_owner(ufi.ammoBank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_5)).await?;
+    // let current_ammo_iter = fleet_current_ammo.value.iter().filter(|f| { f.pubkey == ufi.ammoToken }).nth(0);
+    // if current_ammo_iter.is_some() {
 
-        if addr1.is_some() {
-            fleet_sub.account_address.push(addr1.unwrap());
-        }
+    //     let addr1 = match current_ammo_iter.unwrap().clone().account.data {
+    //         Json(t) => {
+    //             Some(t.program)
+    //         }
+    //         Binary(_1, _2) => {
+    //             None
+    //         },
+    //         LegacyBinary(_1) => {
+    //             None
+    //         }
+    //     };
 
-    }
+    //     if addr1.is_some() {
+    //         fleet_sub.account_address.push(addr1.unwrap());
+    //     }
+
+    // }
 
     let rpc_acc_info_req_2 = RpcAccountInfoConfig {
         encoding: Some(UiAccountEncoding::Base64),
@@ -377,21 +384,23 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
                 
                 for fcc in fleet_current_cargo.value {
 
-                    let addr1 = match fcc.clone().account.data {
-                        Json(t) => {
-                            Some(t.program)
-                        }
-                        Binary(_1, _2) => {
-                            None
-                        },
-                        LegacyBinary(_1) => {
-                            None
-                        }
-                    };
+                    fleet_sub.account_address.push(fcc.pubkey);
 
-                    if addr1.is_some() {
-                        fleet_sub.account_address.push(addr1.unwrap());
-                    }
+                    // let addr1 = match fcc.clone().account.data {
+                    //     Json(t) => {
+                    //         Some(t.program)
+                    //     }
+                    //     Binary(_1, _2) => {
+                    //         None
+                    //     },
+                    //     LegacyBinary(_1) => {
+                    //         None
+                    //     }
+                    // };
+
+                    // if addr1.is_some() {
+                    //     fleet_sub.account_address.push(addr1.unwrap());
+                    // }
 
                 }
 
@@ -413,21 +422,23 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
                 
                 for fcc in fleet_current_cargo.value {
 
-                    let addr1 = match fcc.clone().account.data {
-                        Json(t) => {
-                            Some(t.program)
-                        }
-                        Binary(_1, _2) => {
-                            None
-                        },
-                        LegacyBinary(_1) => {
-                            None
-                        }
-                    };
+                    fleet_sub.account_address.push(fcc.pubkey);
 
-                    if addr1.is_some() {
-                        fleet_sub.account_address.push(addr1.unwrap());
-                    }
+                    // let addr1 = match fcc.clone().account.data {
+                    //     Json(t) => {
+                    //         Some(t.program)
+                    //     }
+                    //     Binary(_1, _2) => {
+                    //         None
+                    //     },
+                    //     LegacyBinary(_1) => {
+                    //         None
+                    //     }
+                    // };
+
+                    // if addr1.is_some() {
+                    //     fleet_sub.account_address.push(addr1.unwrap());
+                    // }
 
                 }
 

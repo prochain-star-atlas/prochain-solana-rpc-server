@@ -90,6 +90,7 @@ pub fn start_socketio_httpd(config: JsonRpcConfig, state: Arc<SolanaStateManager
     
         let _t = run(config, state, sol_client).is_ok();
         log::info!("SocketIO httpd started !");
+        
     });
 
 }

@@ -18,6 +18,7 @@ pub struct UserFleetCargoItem {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UserFleetInstanceRequest {
 
+    pub userId: String,
     pub publicKey: String,
 
     pub cargoHold: String,
@@ -36,6 +37,7 @@ pub struct UserFleetInstanceRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UserFleetInstanceResponse {
 
+    pub userId: String,
     pub publicKey: String,
     pub fleetAcctInfo: String,
 

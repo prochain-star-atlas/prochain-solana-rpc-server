@@ -4,7 +4,7 @@ use bigdecimal::ToPrimitive;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use socketioxide::{
-    extract::{Data, SocketRef, State},
+    extract::{AckSender, Data, SocketRef, State},
     SocketIo,
 };
 use solana_account_decoder::{parse_token::UiTokenAccount, UiAccountData, UiAccountEncoding};
@@ -801,6 +801,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
     };
 
     let user_instance: UserFleetInstanceResponse = UserFleetInstanceResponse {
+        userId: ufi.userId,
         publicKey: pub_key.to_string(),
         fleetAcctInfo: res_fleet_acc_info.unwrap(),
         foodCnt: amount_food,
@@ -827,10 +828,11 @@ pub async fn run(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_clie
     log::info!("Starting sockerio server on 0.0.0.0:14655");
 
     let request_processor = JsonRpcRequestProcessor::new(config, sol_client, state.clone());
-    
     let (layer, io) = SocketIo::builder().with_state(UserCnt::new()).build_layer();
 
-    io.ns("/", |s: SocketRef| {
+    io.ns("/", move |s: SocketRef| {
+
+        let request_processor_local = request_processor.clone();
 
         s.on(
             "subscribeToFleetChange",
@@ -844,16 +846,49 @@ pub async fn run(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_clie
 
                 tokio::spawn(async move {
 
-                    let fleet_subscription = create_subscription_for_fleet(request_processor.clone(), ufi.clone()).await;
+                    let fleet_subscription = create_subscription_for_fleet(request_processor_local.clone(), ufi.clone()).await;
                     if fleet_subscription.is_ok() {
                         set_mutex_fleet_sub(key.clone(), fleet_subscription.unwrap());
-                        let _res = run_subscription_fleet(state.clone(), key.clone(), request_processor.clone(), ufi.clone(), s).await;
+                        let _res = run_subscription_fleet(state.clone(), key.clone(), request_processor_local.clone(), ufi.clone(), s).await;
                     } else {
                         log::error!("Error creating the fleet subscription {:?}", ufi.clone().publicKey);
                     }
 
                 });  
 
+                
+            },
+        );
+
+        let request_processor_local_1 = request_processor.clone();
+
+        s.on(
+            "forceRefreshFleet",
+            |s: SocketRef, Data::<String>(msg), ack: AckSender| async move {
+
+                let ufi: UserFleetInstanceRequest = serde_json::from_str(&msg).unwrap();
+                log::info!("[SOCKETIO] force_fleet_refreshed for pubkey: {:?}", ufi.publicKey);
+
+                tokio::spawn(async move {
+
+                    let fleet_refreshed = refresh_fleet(request_processor_local_1.clone(), ufi.clone()).await;
+                    if fleet_refreshed.is_ok() {
+
+                        let fleet_refreshed_json = serde_json::to_string(&fleet_refreshed.unwrap());
+                        if fleet_refreshed_json.is_ok() {
+                            log::info!("force_fleet_refreshed updated {:?}", ufi.clone().publicKey);
+                            ack.send(&fleet_refreshed_json.unwrap()).ok()
+                        } else {
+                            log::error!("force_fleet_refreshed error {:?}", fleet_refreshed_json.err());
+                            None
+                        }
+
+                    } else {
+                        log::error!("force_fleet_refreshed {:?}", ufi.clone().publicKey);
+                        None
+                    }
+
+                });  
                 
             },
         );

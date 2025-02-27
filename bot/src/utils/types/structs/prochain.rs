@@ -28,6 +28,8 @@ pub struct UserFleetInstanceRequest {
     pub fuelToken: String,
     pub ammoToken: String,
     pub sduToken: String,
+
+    pub forceRefresh: bool
     
 }
 

@@ -177,7 +177,7 @@ pub mod rpc_accounts {
             let pubkey = verify_pubkey(&pubkey_str);
             match pubkey {
                 Err(err) => Box::pin(future::err(err)),
-                Ok(pubkey) => Box::pin(async move { meta.get_account_info(&pubkey, config).await }),
+                Ok(pubkey) => Box::pin(async move { meta.get_account_info(&pubkey, config, None).await }),
             }
             
         }
@@ -215,7 +215,7 @@ pub mod rpc_accounts {
                     }
                 }
             }
-            Box::pin(async move { meta.get_multiple_accounts(pubkeys, config).await })
+            Box::pin(async move { meta.get_multiple_accounts(pubkeys, config, None).await })
         }
 
         fn get_program_accounts_full(
@@ -236,7 +236,7 @@ pub mod rpc_accounts {
             let program_id = result.unwrap();
 
             Box::pin(async move {
-                meta.get_program_accounts(&program_id, config)
+                meta.get_program_accounts(&program_id, config, None)
                     .await
             })
 
@@ -280,7 +280,7 @@ pub mod rpc_accounts {
             token_id_str:String,
             config:Option<RpcTransactionLogsConfig>) -> BoxFuture<Result<solana_client::rpc_response::Response<UiTokenAmount>>>  {
 
-                Box::pin(async move { meta.get_token_supply(token_id_str, config).await })
+                Box::pin(async move { meta.get_token_supply(token_id_str, config, None).await })
         
         }
         
@@ -294,7 +294,7 @@ pub mod rpc_accounts {
             token_account_filter:RpcTokenAccountsFilter,
             config:Option<RpcAccountInfoConfig>) -> BoxFuture<Result<Response<Vec<RpcKeyedAccount>>>> {
             
-            Box::pin(async move { meta.get_token_account_by_owner(program_id_str, token_account_filter, config).await })
+            Box::pin(async move { meta.get_token_account_by_owner(program_id_str, token_account_filter, config, None).await })
 
         }
 
@@ -314,7 +314,7 @@ pub mod rpc_accounts {
                 program_id_str:String,
                 config:Option<RpcAccountInfoConfig>) -> BoxFuture<Result<Response<UiTokenAmount>>> {
             
-                    Box::pin(async move { meta.get_token_accounts_balance(program_id_str, config).await })
+                    Box::pin(async move { meta.get_token_accounts_balance(program_id_str, config, None).await })
 
         }
         

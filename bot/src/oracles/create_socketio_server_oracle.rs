@@ -90,7 +90,7 @@ pub fn start_socketio_httpd(config: JsonRpcConfig, state: Arc<SolanaStateManager
     
         let _t = run(config, state, sol_client).is_ok();
         log::info!("SocketIO httpd started !");
-        
+
     });
 
 }
@@ -487,7 +487,7 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
         sort_results: None,
     };
 
-    let starbase_player_cargo_holds = json_rpc_processor.get_program_accounts(&Pubkey::try_from("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk")?, Some(rpc_prog_info)).await?;
+    let starbase_player_cargo_holds = json_rpc_processor.get_program_accounts(&Pubkey::try_from("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk")?, Some(rpc_prog_info), Some(ufi.forceRefresh)).await?;
 
     let rp1 = match starbase_player_cargo_holds {
 
@@ -502,7 +502,7 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
                     min_context_slot: None,
                 };
             
-                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await?;
+                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo), Some(ufi.forceRefresh)).await?;
                 
                 for fcc in fleet_current_cargo.value {
 
@@ -540,7 +540,7 @@ pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestPro
                     min_context_slot: None,
                 };
             
-                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await?;
+                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo), Some(ufi.forceRefresh)).await?;
                 
                 for fcc in fleet_current_cargo.value {
 
@@ -586,7 +586,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
         min_context_slot: None,
     };
 
-    let fleet_acc_info = json_rpc_processor.get_account_info(&pub_key, Some(rpc_acc_info_req_1)).await?;
+    let fleet_acc_info = json_rpc_processor.get_account_info(&pub_key, Some(rpc_acc_info_req_1), Some(ufi.forceRefresh)).await?;
     let res_fleet_acc_info = match fleet_acc_info.value.unwrap().data {
         UiAccountData::Json(_) => None,
         UiAccountData::LegacyBinary(blob) => None,
@@ -607,7 +607,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
         min_context_slot: None,
     };
 
-    let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(ufi.cargoHold.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_3)).await?;
+    let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(ufi.cargoHold.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_3), Some(ufi.forceRefresh)).await?;
     let current_food_iter = fleet_current_cargo.value.iter().filter(|f| { f.pubkey == ufi.foodToken }).nth(0);
     let mut amount_food: u64 = 0;
     if current_food_iter.is_some() {
@@ -649,7 +649,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
         min_context_slot: None,
     };
 
-    let fleet_current_fuel = json_rpc_processor.get_token_account_by_owner(ufi.fuelTank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_4)).await?;
+    let fleet_current_fuel = json_rpc_processor.get_token_account_by_owner(ufi.fuelTank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_4), Some(ufi.forceRefresh)).await?;
     let current_fuel_iter = fleet_current_fuel.value.iter().filter(|f| { f.pubkey == ufi.fuelToken }).nth(0);
     let mut amount_fuel: u64 = 0;
     if current_fuel_iter.is_some() {
@@ -674,7 +674,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
         min_context_slot: None,
     };
 
-    let fleet_current_ammo = json_rpc_processor.get_token_account_by_owner(ufi.ammoBank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_5)).await?;
+    let fleet_current_ammo = json_rpc_processor.get_token_account_by_owner(ufi.ammoBank.clone(), rpc_token_account_filter.clone(), Some(rpc_acc_info_req_5), Some(ufi.forceRefresh)).await?;
     let current_ammo_iter = fleet_current_ammo.value.iter().filter(|f| { f.pubkey == ufi.ammoToken }).nth(0);
     let mut amount_ammo: u64 = 0;
     if current_ammo_iter.is_some() {
@@ -708,7 +708,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
         sort_results: None,
     };
 
-    let starbase_player_cargo_holds = json_rpc_processor.get_program_accounts(&Pubkey::try_from("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk").unwrap(), Some(rpc_prog_info)).await?;
+    let starbase_player_cargo_holds = json_rpc_processor.get_program_accounts(&Pubkey::try_from("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk").unwrap(), Some(rpc_prog_info), Some(ufi.forceRefresh)).await?;
 
     let mut vec_tokens: Vec<UserFleetCargoItem> = vec![];
 
@@ -725,7 +725,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
                     min_context_slot: None,
                 };
             
-                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await?;
+                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo), Some(ufi.forceRefresh)).await?;
                 
                 for fcc in fleet_current_cargo.value {
 
@@ -767,7 +767,7 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
                     min_context_slot: None,
                 };
             
-                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo)).await?;
+                let fleet_current_cargo = json_rpc_processor.get_token_account_by_owner(rka.pubkey, rpc_token_account_filter.clone(), Some(rpc_acc_info_req_cargo), Some(ufi.forceRefresh)).await?;
                 
                 for fcc in fleet_current_cargo.value {
 

@@ -210,10 +210,11 @@ impl JsonRpcRequestProcessor {
     fn get_token_program_id_and_mint(
         &self,
         token_account_filter: TokenAccountsFilter,
+        force_refresh: Option<bool>
     ) -> Result<(Pubkey, Option<Pubkey>)> {
         match token_account_filter {
             TokenAccountsFilter::Mint(mint) => {
-                let (mint_owner, _) = self.get_mint_owner_and_additional_data(&mint)?;
+                let (mint_owner, _) = self.get_mint_owner_and_additional_data(&mint, force_refresh)?;
                 if !is_known_spl_token_id(&mint_owner) {
                     return Err(Error::invalid_params(
                         "Invalid param: not a Token mint".to_string(),
@@ -233,11 +234,13 @@ impl JsonRpcRequestProcessor {
         }
     }
 
-    fn get_prochain_account(&self, pubkey: &Pubkey, config: RpcAccountInfoConfig) -> Option<ProchainAccountInfo> {
+    fn get_prochain_account(&self, pubkey: &Pubkey, config: RpcAccountInfoConfig, force_refresh: Option<bool>) -> Option<ProchainAccountInfo> {
+
+        let force_refresh_var = force_refresh.unwrap_or(false);
 
         let cached_acc = self.sol_state.get_account_info(pubkey.clone());
 
-        if cached_acc.is_some() {
+        if cached_acc.is_some() && !force_refresh_var {
 
             info!("[MEMORY] get_account_info request received: {}", pubkey.to_string());
 
@@ -317,11 +320,12 @@ impl JsonRpcRequestProcessor {
         &self,
         pubkey: &Pubkey,
         config: Option<RpcAccountInfoConfig>,
+        force_refresh: Option<bool>
     ) -> Result<RpcResponse<Option<UiAccount>>> {
 
         let config = config.unwrap_or_default();
 
-        let pro_account = self.get_prochain_account(pubkey, config.clone());
+        let pro_account = self.get_prochain_account(pubkey, config.clone(), force_refresh);
 
         let slot: u64 = self.sol_state.get_slot();
 
@@ -353,10 +357,13 @@ impl JsonRpcRequestProcessor {
         &self,
         pubkeys: Vec<Pubkey>,
         config: Option<RpcAccountInfoConfig>,
+        force_refresh: Option<bool>
     ) -> Result<RpcResponse<Vec<Option<UiAccount>>>> {
 
         info!("getting get_multiple_accounts is called for {:?}", pubkeys);
         let config = config.unwrap_or_default();
+
+        let force_refresh_var = force_refresh.unwrap_or(false);
 
         let mut accounts = Vec::new();
         let slot = self.sol_state.get_slot();
@@ -365,7 +372,8 @@ impl JsonRpcRequestProcessor {
 
             let ui_account;
             let cached_acc = self.sol_state.get_account_info(pubkey.clone());
-            if cached_acc.is_some() {
+
+            if cached_acc.is_some() && !force_refresh_var {
 
                 info!("[MEMORY] get_account_info request received: {}", pubkey.to_string());
 
@@ -428,6 +436,7 @@ impl JsonRpcRequestProcessor {
     pub fn get_mint_owner_and_additional_data(
         &self,
         mint: &Pubkey,
+        force_refresh: Option<bool>
     ) -> Result<(Pubkey, SplTokenAdditionalData)> {
         if mint.to_string() == spl_token::native_mint::id().to_string() {
             Ok((
@@ -436,7 +445,7 @@ impl JsonRpcRequestProcessor {
             ))
         } else {
             let config = RpcAccountInfoConfig { commitment: Some(CommitmentConfig::confirmed()), encoding: None, data_slice: None, min_context_slot: None };
-            let mint_account = self.get_prochain_account(&mint.clone(), config);
+            let mint_account = self.get_prochain_account(&mint.clone(), config, force_refresh);
 
             if mint_account.is_some() {
                 let mintc = mint_account.unwrap();
@@ -451,13 +460,14 @@ impl JsonRpcRequestProcessor {
     pub fn get_parsed_token_accounts(
         &self,
         keyed_accounts: Vec<ProchainAccountInfo>,
+        force_refresh: Option<bool>
     ) -> Vec<RpcKeyedAccount>
     {
         let mut mint_data: HashMap<Pubkey, AccountAdditionalDataV2> = HashMap::new();
         let r: Vec<RpcKeyedAccount> = keyed_accounts.iter().filter_map(move |ka| {
             let additional_data = get_token_account_mint(&ka.data()).and_then(|mint_pubkey| {
                 mint_data.get(&mint_pubkey).cloned().or_else(|| {
-                    let (_, data) = self.get_mint_owner_and_additional_data(&mint_pubkey).ok()?;
+                    let (_, data) = self.get_mint_owner_and_additional_data(&mint_pubkey, force_refresh).ok()?;
                     let data = AccountAdditionalDataV2 {
                         spl_token_additional_data: Some(data),
                     };
@@ -588,9 +598,11 @@ impl JsonRpcRequestProcessor {
     pub async fn get_program_accounts(
         &self,
         program_id: &Pubkey,
-        config: Option<RpcProgramAccountsConfig>
+        config: Option<RpcProgramAccountsConfig>,
+        force_refresh: Option<bool>
     ) -> Result<OptionalContext<Vec<RpcKeyedAccount>>> {
 
+        let force_refresh_var = force_refresh.unwrap_or(false);
         let mut c = config.unwrap_or_default();
         let commitment = c.account_config.commitment.unwrap_or(CommitmentConfig::confirmed());
         c.account_config.commitment = Some(commitment);
@@ -604,7 +616,7 @@ impl JsonRpcRequestProcessor {
 
         let lst_ps = crate::oracles::create_subscription_oracle::get_mutex_program_sub(String::from("sage"));
 
-        if lst_ps.contains(&program_id.to_string()) {
+        if lst_ps.contains(&program_id.to_string()) && !force_refresh_var {
 
             info!("[MEMORY] get_program_accounts request received: {}", program_id.to_string());
 
@@ -670,7 +682,7 @@ impl JsonRpcRequestProcessor {
 
             let accounts = if is_known_spl_token_id(program_id) && encoding == UiAccountEncoding::JsonParsed
             {
-                self.get_parsed_token_accounts(keyed_accounts)
+                self.get_parsed_token_accounts(keyed_accounts, force_refresh)
             } else {
                 keyed_accounts
                     .into_iter()
@@ -743,16 +755,18 @@ impl JsonRpcRequestProcessor {
     pub async fn get_token_supply(
         &self,
         token_id_str: String,
-        config: Option<RpcTransactionLogsConfig>
+        config: Option<RpcTransactionLogsConfig>,
+        force_refresh: Option<bool>
     ) -> Result<solana_client::rpc_response::Response<UiTokenAmount>> {
 
+        let force_refresh_var = force_refresh.unwrap_or(false);
         let pk = Pubkey::try_from(token_id_str.as_str()).unwrap();
         let cached_acc = self.sol_state.get_account_info(pk.clone());
         let opt: RpcTransactionLogsConfig = config.unwrap_or(RpcTransactionLogsConfig { commitment: Some(CommitmentConfig::confirmed()) });
 
         let ui_token_amount: UiTokenAmount;
 
-        if cached_acc.is_some() {
+        if cached_acc.is_some() && !force_refresh_var {
 
             info!("[MEMORY] get_token_supply request received: {}", token_id_str);
 
@@ -837,9 +851,11 @@ impl JsonRpcRequestProcessor {
         &self,
         program_id_str: String,
         token_account_filter: RpcTokenAccountsFilter,
-        config: Option<RpcAccountInfoConfig>
+        config: Option<RpcAccountInfoConfig>,
+        force_refresh: Option<bool>
     ) -> Result<Response<Vec<RpcKeyedAccount>>> {
 
+        let force_refresh_var = force_refresh.unwrap_or(false);
         let c = config.unwrap_or_default();
         let sort_results = false;
         let encoding = c.encoding.unwrap_or(UiAccountEncoding::Binary);
@@ -852,7 +868,7 @@ impl JsonRpcRequestProcessor {
 
         let lst_ps = crate::oracles::create_subscription_oracle::get_mutex_program_sub(String::from("sage"));
 
-        if lst_ps.contains(&program_id_str) {
+        if lst_ps.contains(&program_id_str) && !force_refresh_var {
 
             let taf = match token_account_filter {
                 RpcTokenAccountsFilter::Mint(m) => TokenAccountsFilter::Mint(Pubkey::try_from(m.as_str()).unwrap()),
@@ -860,7 +876,7 @@ impl JsonRpcRequestProcessor {
             };
 
             let pb = Pubkey::try_from(program_id_str.as_str()).unwrap(); 
-            let (token_program_id, mint) = self.get_token_program_id_and_mint(taf)?;
+            let (token_program_id, mint) = self.get_token_program_id_and_mint(taf, force_refresh)?;
 
             info!("[MEMORY] get_token_account_by_owner request received: {}", program_id_str);
 
@@ -881,7 +897,7 @@ impl JsonRpcRequestProcessor {
                 sort_results,
             );
             let accounts = if encoding == UiAccountEncoding::JsonParsed {
-                self.get_parsed_token_accounts(keyed_accounts)
+                self.get_parsed_token_accounts(keyed_accounts, force_refresh)
             } else {
                 keyed_accounts
                     .into_iter()
@@ -1042,15 +1058,17 @@ impl JsonRpcRequestProcessor {
     pub async fn get_token_accounts_balance(
         &self,
         program_id_str:String,
-        config: Option<RpcAccountInfoConfig>
+        config: Option<RpcAccountInfoConfig>,
+        force_refresh: Option<bool>
     ) -> Result<Response<UiTokenAmount>> {
 
+        let force_refresh_var = force_refresh.unwrap_or(false);
         let pk = Pubkey::try_from(program_id_str.as_str()).unwrap();
         let cached_acc = self.sol_state.get_account_info(pk.clone());
 
         let ui_token_amount: UiTokenAmount;
 
-        if cached_acc.is_some() {
+        if cached_acc.is_some() && !force_refresh_var {
 
             info!("[MEMORY] get_token_accounts_balance request received: {}", program_id_str);
 
@@ -1065,7 +1083,7 @@ impl JsonRpcRequestProcessor {
             let token_account = StateWithExtensions::<TokenAccount>::unpack(c_acc_r.data())
                 .map_err(|_| Error::invalid_params("Invalid param: not a Token account".to_string()))?;
             let mint = Pubkey::try_from(token_account.base.mint.to_string().as_str()).unwrap();
-            let (_, data) = self.get_mint_owner_and_additional_data(&mint)?;
+            let (_, data) = self.get_mint_owner_and_additional_data(&mint, force_refresh)?;
             ui_token_amount = token_amount_to_ui_amount_v2(token_account.base.amount, &data);
 
         } else {

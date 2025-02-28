@@ -36,14 +36,21 @@ use tracing::info;
 lazy_static! {
     static ref LIST_FLEET_SUBSCRIPTION: Mutex<DashMap<String, FleetSubscription>> = Mutex::new(DashMap::new());
     static ref SPINLOCK_REFRESH_FLEET: Mutex<DashMap<String, Arc<AtomicUsize>>> = Mutex::new(DashMap::new());
+    static ref SPINLOCK_MESSAGE_REFRESH_FLEET: Mutex<DashMap<String, Arc<AtomicUsize>>> = Mutex::new(DashMap::new());
+    static ref SPINLOCK_REFRESH_FLEET_OWNER: Mutex<DashMap<String, Arc<AtomicUsize>>> = Mutex::new(DashMap::new());
+    static ref SPINLOCK_MESSAGE_REFRESH_FLEET_OWNER: Mutex<DashMap<String, Arc<AtomicUsize>>> = Mutex::new(DashMap::new());
 }
 
 pub fn set_mutex_fleet_sub(sub_name: String, lst_vec: FleetSubscription) {
     LIST_FLEET_SUBSCRIPTION.lock().insert(sub_name.clone(), lst_vec);
     SPINLOCK_REFRESH_FLEET.lock().insert(sub_name.clone(), Arc::new(AtomicUsize::new(0)));
+    SPINLOCK_MESSAGE_REFRESH_FLEET.lock().insert(sub_name.clone(), Arc::new(AtomicUsize::new(0)));
+    SPINLOCK_REFRESH_FLEET_OWNER.lock().insert(sub_name.clone(), Arc::new(AtomicUsize::new(0)));
+    SPINLOCK_MESSAGE_REFRESH_FLEET_OWNER.lock().insert(sub_name.clone(), Arc::new(AtomicUsize::new(0)));
 }
 
 pub fn remove_mutex_fleet_sub(sub_name: String) {
+
     let all_keys_subs: Vec<String> = LIST_FLEET_SUBSCRIPTION.lock().iter().map(|f| { f.key().clone() }).collect();
     for a in all_keys_subs {
 
@@ -63,6 +70,37 @@ pub fn remove_mutex_fleet_sub(sub_name: String) {
 
         SPINLOCK_REFRESH_FLEET.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
     }
+
+    let all_keys_locks_message: Vec<String> = SPINLOCK_MESSAGE_REFRESH_FLEET.lock().iter().map(|f| { f.key().clone() }).collect();
+    for a in all_keys_locks_message {
+
+        if !a.starts_with(&sub_name) {
+            continue;
+        }
+
+        SPINLOCK_MESSAGE_REFRESH_FLEET.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+    }
+
+    let all_keys_locks_owner: Vec<String> = SPINLOCK_REFRESH_FLEET_OWNER.lock().iter().map(|f| { f.key().clone() }).collect();
+    for a in all_keys_locks_owner {
+
+        if !a.starts_with(&sub_name) {
+            continue;
+        }
+
+        SPINLOCK_REFRESH_FLEET_OWNER.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+    }
+
+    let all_keys_locks_message_owner: Vec<String> = SPINLOCK_MESSAGE_REFRESH_FLEET_OWNER.lock().iter().map(|f| { f.key().clone() }).collect();
+    for a in all_keys_locks_message_owner {
+
+        if !a.starts_with(&sub_name) {
+            continue;
+        }
+
+        SPINLOCK_MESSAGE_REFRESH_FLEET_OWNER.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+    }
+
 }
 
 pub fn get_mutex_fleet_sub(sub_name: String) -> FleetSubscription {
@@ -76,6 +114,33 @@ pub fn get_mutex_fleet_sub(sub_name: String) -> FleetSubscription {
 
 pub fn get_mutex_spinlock_fleet_sub(sub_name: String) -> Arc<AtomicUsize> {
     let map = SPINLOCK_REFRESH_FLEET.lock();
+    let val0 = map.get(&sub_name);
+    match val0 {
+        None => { return Arc::new(AtomicUsize::new(0)); },
+        Some(val) => { val.value().clone() }
+    }
+}
+
+pub fn get_mutex_spinlock_message_fleet_sub(sub_name: String) -> Arc<AtomicUsize> {
+    let map = SPINLOCK_MESSAGE_REFRESH_FLEET.lock();
+    let val0 = map.get(&sub_name);
+    match val0 {
+        None => { return Arc::new(AtomicUsize::new(0)); },
+        Some(val) => { val.value().clone() }
+    }
+}
+
+pub fn get_mutex_spinlock_fleet_owner_sub(sub_name: String) -> Arc<AtomicUsize> {
+    let map = SPINLOCK_REFRESH_FLEET.lock();
+    let val0 = map.get(&sub_name);
+    match val0 {
+        None => { return Arc::new(AtomicUsize::new(0)); },
+        Some(val) => { val.value().clone() }
+    }
+}
+
+pub fn get_mutex_spinlock_message_fleet_owner_sub(sub_name: String) -> Arc<AtomicUsize> {
+    let map = SPINLOCK_MESSAGE_REFRESH_FLEET.lock();
     let val0 = map.get(&sub_name);
     match val0 {
         None => { return Arc::new(AtomicUsize::new(0)); },
@@ -180,8 +245,8 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
 
             while let Some(message) = stream.next().await {
 
-                if get_mutex_spinlock_fleet_sub(sub_name_local.clone()).swap(0, Ordering::Relaxed) == 1 {
-                    info!("stopping yellowstone subscription for fleet get_mutex_spinlock_fleet_sub account {:?}", sub_name_local.clone());
+                if get_mutex_spinlock_message_fleet_sub(sub_name_local.clone()).swap(0, Ordering::Relaxed) == 1 {
+                    info!("stopping yellowstone subscription for fleet get_mutex_spinlock_message_fleet_sub account {:?}", sub_name_local.clone());
                     break;
                 }
 
@@ -249,8 +314,8 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
 
         loop {
 
-            if get_mutex_spinlock_fleet_sub(sub_name_local_2.clone()).swap(0, Ordering::Relaxed) == 1 {
-                info!("stopping yellowstone subscription for fleet get_mutex_spinlock_fleet_sub owner {:?}", sub_name_local_2);
+            if get_mutex_spinlock_fleet_owner_sub(sub_name_local_2.clone()).swap(0, Ordering::Relaxed) == 1 {
+                info!("stopping yellowstone subscription for fleet get_mutex_spinlock_fleet_owner_sub owner {:?}", sub_name_local_2);
                 break;
             }
             
@@ -287,8 +352,8 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
 
             while let Some(message) = stream.next().await {
 
-                if get_mutex_spinlock_fleet_sub(sub_name_local_2.clone()).swap(0, Ordering::Relaxed) == 1 {
-                    info!("stopping yellowstone subscription for fleet get_mutex_spinlock_fleet_sub {:?}", sub_name_local_2);
+                if get_mutex_spinlock_message_fleet_owner_sub(sub_name_local_2.clone()).swap(0, Ordering::Relaxed) == 1 {
+                    info!("stopping yellowstone subscription for fleet get_mutex_spinlock_message_fleet_owner_sub {:?}", sub_name_local_2);
                     break;
                 }
 

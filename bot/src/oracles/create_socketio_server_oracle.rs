@@ -103,11 +103,25 @@ pub fn remove_mutex_fleet_sub(sub_name: String) {
 
 }
 
+pub fn get_all_values_sub() -> Vec<FleetSubscription> {
+    let map: Vec<FleetSubscription> = LIST_FLEET_SUBSCRIPTION.lock().iter().map(|ref_multi| ref_multi.value().clone()).collect();
+    return map;
+}
+
+pub fn get_all_values_sub_by_user_id(user_id: String) -> Vec<FleetSubscription> {
+    let map: Vec<FleetSubscription> = LIST_FLEET_SUBSCRIPTION.lock().iter().map(|ref_multi| ref_multi.value().clone()).collect();
+    return map.iter().filter(|t| {
+        let parts= t.id_sub.split("_");
+        let collection: Vec<&str> = parts.collect();
+        return collection[0] == user_id.as_str();
+    }).map(|t| t.clone()).collect();
+}
+
 pub fn get_mutex_fleet_sub(sub_name: String) -> FleetSubscription {
     let map = LIST_FLEET_SUBSCRIPTION.lock();
     let val0 = map.get(&sub_name);
     match val0 {
-        None => { return FleetSubscription { account_address: vec![], owner_address: vec![] }; },
+        None => { return FleetSubscription { id_sub: sub_name, account_address: vec![], owner_address: vec![] }; },
         Some(val) => { val.value().clone() }
     }
 }
@@ -160,8 +174,9 @@ pub fn start_socketio_httpd(config: JsonRpcConfig, state: Arc<SolanaStateManager
 
 }
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct FleetSubscription {
+    id_sub: String,
     account_address: Vec<String>,
     owner_address: Vec<String>
 }
@@ -413,21 +428,21 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
 
 }
 
-pub async fn create_subscription_for_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: UserFleetInstanceRequest) -> Result<FleetSubscription, anyhow::Error> {
+pub async fn create_subscription_for_fleet(key: String, json_rpc_processor: JsonRpcRequestProcessor, ufi: UserFleetInstanceRequest) -> Result<FleetSubscription, anyhow::Error> {
 
-    let mut fleet_sub = FleetSubscription { account_address: vec![], owner_address: vec![] };
+    let mut fleet_sub = FleetSubscription { id_sub: key, account_address: vec![], owner_address: vec![] };
 
     fleet_sub.account_address.push(ufi.publicKey.to_string());
     fleet_sub.owner_address.push(ufi.publicKey.to_string());
 
     let rpc_token_account_filter = RpcTokenAccountsFilter::ProgramId("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA".to_string());
 
-    let rpc_acc_info_req_3 = RpcAccountInfoConfig {
-        encoding: Some(UiAccountEncoding::JsonParsed),
-        data_slice: None,
-        commitment: Some(CommitmentConfig::confirmed()),
-        min_context_slot: None,
-    };
+    // let _rpc_acc_info_req_3 = RpcAccountInfoConfig {
+    //     encoding: Some(UiAccountEncoding::JsonParsed),
+    //     data_slice: None,
+    //     commitment: Some(CommitmentConfig::confirmed()),
+    //     min_context_slot: None,
+    // };
 
     fleet_sub.owner_address.push(ufi.cargoHold.clone());
     fleet_sub.account_address.push(ufi.foodToken);
@@ -911,7 +926,7 @@ pub async fn run(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_clie
 
                 tokio::spawn(async move {
 
-                    let fleet_subscription = create_subscription_for_fleet(request_processor_local.clone(), ufi.clone()).await;
+                    let fleet_subscription = create_subscription_for_fleet(key.clone(), request_processor_local.clone(), ufi.clone()).await;
                     if fleet_subscription.is_ok() {
                         set_mutex_fleet_sub(key.clone(), fleet_subscription.unwrap());
                         let _res = run_subscription_fleet(state.clone(), key.clone(), request_processor_local.clone(), ufi.clone(), s).await;

@@ -10,7 +10,7 @@ use actix_web::{
     App,  HttpServer,
 };
 use utoipa::{OpenApi};
-use crate::http::solana;
+use crate::http::{solana, staratlas};
 use utoipa_rapidoc::RapiDoc;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -33,6 +33,7 @@ async fn start_internal_httpd() -> Result<(), impl Error> {
     #[openapi(
         nest(
             (path = "/solana-api", api = solana::SolanaApi),
+            (path = "/staratlas-api", api = staratlas::StarAtlasApi),
         )
     )]
     struct ApiDoc;
@@ -46,6 +47,7 @@ async fn start_internal_httpd() -> Result<(), impl Error> {
             .wrap(Logger::default())
             //.service(web::scope("/todoapi").configure(todo::configure(store.clone())))
             .service(web::scope("/solana-api").configure(solana::configure()))
+            .service(web::scope("/staratlas-api").configure(staratlas::configure()))
             //.service(Redoc::with_url("/redoc", openapi.clone()))
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),

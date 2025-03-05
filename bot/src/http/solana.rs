@@ -36,10 +36,7 @@ pub(super) fn configure() -> impl FnOnce(&mut ServiceConfig) {
             .service(get_solana_cached_subscription_tokenowner)
             .service(get_solana_cached_subscription_account)
             .service(get_solana_cached_subscription_token_account)
-            .service(get_solana_subscription_settings)
-            .service(get_staratlas_fleet_subscription_all)
-            .service(get_staratlas_fleet_subscription_by_user_id)
-            .service(remove_staratlas_fleet_subscription_by_id);
+            .service(get_solana_subscription_settings);
     }
 }
 
@@ -401,46 +398,4 @@ async fn get_solana_subscription_settings() -> impl Responder {
     };
 
     HttpResponse::Ok().json(res1)
-}
-
-#[utoipa::path(
-    responses(
-        (status = 200, description = "get staratlas fleet subscriptions", body = [Vec<FleetSubscription>])
-    )
-)]
-#[get("/staratlas/fleet/subscription/all")]
-async fn get_staratlas_fleet_subscription_all() -> impl Responder {
-
-    let lst_fleet_sub = crate::oracles::create_socketio_server_oracle::get_all_values_sub();
-
-    HttpResponse::Ok().json(lst_fleet_sub)
-
-}
-
-#[utoipa::path(
-    responses(
-        (status = 200, description = "get staratlas fleet subscriptions by user id", body = [Vec<FleetSubscription>])
-    )
-)]
-#[get("/staratlas/fleet/subscription/byuserid/{user_id}")]
-async fn get_staratlas_fleet_subscription_by_user_id(user_id: Path<String>) -> impl Responder {
-
-    let lst_fleet_sub = crate::oracles::create_socketio_server_oracle::get_all_values_sub_by_user_id(user_id.to_string());
-
-    HttpResponse::Ok().json(lst_fleet_sub)
-
-}
-
-#[utoipa::path(
-    responses(
-        (status = 200, description = "remove staratlas fleet subscription", body = [bool])
-    )
-)]
-#[put("/staratlas/fleet/subscription/remove/{sub_name}")]
-async fn remove_staratlas_fleet_subscription_by_id(sub_name: Path<String>) -> impl Responder {
-
-    let _1 = crate::oracles::create_socketio_server_oracle::remove_mutex_fleet_sub(sub_name.to_string());
-
-    HttpResponse::Ok().json(true)
-
 }

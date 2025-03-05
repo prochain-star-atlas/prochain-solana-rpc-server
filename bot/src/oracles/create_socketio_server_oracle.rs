@@ -10,6 +10,7 @@ use socketioxide::{
 use solana_account_decoder::{parse_token::UiTokenAccount, UiAccountData, UiAccountEncoding};
 use solana_client::{rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig, RpcTokenAccountsFilter}, rpc_filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType}};
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
+use utoipa::ToSchema;
 use std::sync::Arc;
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
@@ -174,7 +175,7 @@ pub fn start_socketio_httpd(config: JsonRpcConfig, state: Arc<SolanaStateManager
 
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct FleetSubscription {
     id_sub: String,
     account_address: Vec<String>,

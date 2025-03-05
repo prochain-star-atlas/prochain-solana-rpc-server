@@ -8,7 +8,7 @@ use serde_json::json;
 use solana_client::{rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig, RpcTokenAccountsFilter}, rpc_request::RpcRequest, rpc_response::{RpcKeyedAccount, RpcResult}};
 use solana_sdk::{commitment_config::{CommitmentConfig, CommitmentLevel}, pubkey::Pubkey};
 use utoipa::OpenApi;
-use crate::{model::model::GrpcYellowstoneSubscription, solana_state::{ProchainAccountInfo, ProchainAccountInfoSchema}};
+use crate::{model::model::GrpcYellowstoneSubscription, oracles::create_socketio_server_oracle::FleetSubscription, solana_state::{ProchainAccountInfo, ProchainAccountInfoSchema}};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -22,7 +22,7 @@ use crate::{model::model::GrpcYellowstoneSubscription, solana_state::{ProchainAc
         get_solana_cached_subscription_token_account,
         get_solana_subscription_settings
     ),
-    components(schemas(ProchainAccountInfoSchema, GrpcYellowstoneSubscription))
+    components(schemas(ProchainAccountInfoSchema, GrpcYellowstoneSubscription, FleetSubscription))
 )]
 pub(super) struct SolanaApi;
 

@@ -1,4 +1,4 @@
-use std::{cmp::min, collections::HashMap, str::FromStr};
+use std::{cmp::min, collections::HashMap, str::FromStr, time::Duration};
 
 /// The JSON request processor
 /// This takes the request from the client and load the information from the datastore.
@@ -40,6 +40,7 @@ use solana_inline_spl::{token::GenericTokenAccount, token_2022::Account};
 use solana_sdk::signature::Signature;
 use base64::Engine;
 use std::any::type_name;
+use solana_sdk::hash::Hash;
 
 use solana_perf::packet::PACKET_DATA_SIZE;
 
@@ -1134,18 +1135,72 @@ impl JsonRpcRequestProcessor {
     pub async fn get_latest_blockhash(
         &self
     ) -> Result<Response<RpcBlockhash>>  {
+
         info!("[RPC] get_latest_blockhash");
-        let blockhash = self.sol_client.get_latest_blockhash_with_commitment(CommitmentConfig { commitment: CommitmentLevel::Confirmed }).unwrap();
-        return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: blockhash.0.to_string(), last_valid_block_height: blockhash.1 }));
+
+        let retries = 4;
+        let mut count = 0;
+        let mut result_final: (Hash, u64) = (Hash::new_unique(), 0);
+        let mut success = false;
+        loop {
+            let result = self.sol_client.get_latest_blockhash_with_commitment(CommitmentConfig { commitment: CommitmentLevel::Confirmed });
+    
+            if result.is_ok() {
+                result_final = result.unwrap();
+                success = true;
+                break;
+            } else {
+                if count > retries {
+                    break;
+                }
+                count += 1;
+            }
+
+            tokio::time::sleep(Duration::from_millis(500)).await;
+        }
+
+        if success {
+            return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: result_final.0.to_string(), last_valid_block_height: result_final.1 }));
+        }
+
+        return Err(jsonrpc_core::Error::internal_error());
+
     }
 
     pub async fn get_latest_blockhash_with_commitment(
         &self,
         commitment: CommitmentConfig
     ) -> Result<Response<RpcBlockhash>>  {
+
         info!("[RPC] get_latest_blockhash");
-        let blockhash = self.sol_client.get_latest_blockhash_with_commitment(CommitmentConfig { commitment: CommitmentLevel::Confirmed }).unwrap();
-        return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: blockhash.0.to_string(), last_valid_block_height: blockhash.1 }));
+
+        let retries = 4;
+        let mut count = 0;
+        let mut result_final: (Hash, u64) = (Hash::new_unique(), 0);
+        let mut success = false;
+        loop {
+            let result = self.sol_client.get_latest_blockhash_with_commitment(CommitmentConfig { commitment: CommitmentLevel::Confirmed });
+    
+            if result.is_ok() {
+                result_final = result.unwrap();
+                success = true;
+                break;
+            } else {
+                if count > retries {
+                    break;
+                }
+                count += 1;
+            }
+
+            tokio::time::sleep(Duration::from_millis(500)).await;
+        }
+
+        if success {
+            return Ok(new_response(self.sol_state.get_slot() as i64, RpcBlockhash { blockhash: result_final.0.to_string(), last_valid_block_height: result_final.1 }));
+        }
+
+        return Err(jsonrpc_core::Error::internal_error());
+
     }
 
     pub async fn send_transaction(

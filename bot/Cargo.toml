@@ -104,6 +104,8 @@ utoipa-scalar = { workspace = true }
 utoipa-redoc = { workspace = true }
 utoipa-rapidoc = { workspace = true }
 
+argon2 = { workspace = true }
+
 tokio-cron-scheduler = { workspace = true }
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]

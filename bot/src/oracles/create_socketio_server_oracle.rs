@@ -50,12 +50,12 @@ pub fn set_mutex_fleet_sub(sub_name: String, lst_vec: FleetSubscription) {
     SPINLOCK_MESSAGE_REFRESH_FLEET_OWNER.lock().insert(sub_name.clone(), Arc::new(AtomicUsize::new(0)));
 }
 
-pub fn remove_mutex_fleet_sub(sub_name: String) {
+pub fn remove_mutex_fleet_sub_sid(sid: String) {
 
     let all_keys_subs: Vec<String> = LIST_FLEET_SUBSCRIPTION.lock().iter().map(|f| { f.key().clone() }).collect();
     for a in all_keys_subs {
 
-        if !a.starts_with(&sub_name) {
+        if !a.starts_with(&sid) {
             continue;
         }
 
@@ -65,42 +65,53 @@ pub fn remove_mutex_fleet_sub(sub_name: String) {
     let all_keys_locks: Vec<String> = SPINLOCK_REFRESH_FLEET.lock().iter().map(|f| { f.key().clone() }).collect();
     for a in all_keys_locks {
 
-        if !a.starts_with(&sub_name) {
+        if !a.starts_with(&sid) {
             continue;
         }
 
-        SPINLOCK_REFRESH_FLEET.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+        SPINLOCK_REFRESH_FLEET.lock().alter(&a.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
     }
 
     let all_keys_locks_message: Vec<String> = SPINLOCK_MESSAGE_REFRESH_FLEET.lock().iter().map(|f| { f.key().clone() }).collect();
     for a in all_keys_locks_message {
 
-        if !a.starts_with(&sub_name) {
+        if !a.starts_with(&sid) {
             continue;
         }
 
-        SPINLOCK_MESSAGE_REFRESH_FLEET.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+        SPINLOCK_MESSAGE_REFRESH_FLEET.lock().alter(&a.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
     }
 
     let all_keys_locks_owner: Vec<String> = SPINLOCK_REFRESH_FLEET_OWNER.lock().iter().map(|f| { f.key().clone() }).collect();
     for a in all_keys_locks_owner {
 
-        if !a.starts_with(&sub_name) {
+        if !a.starts_with(&sid) {
             continue;
         }
 
-        SPINLOCK_REFRESH_FLEET_OWNER.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+        SPINLOCK_REFRESH_FLEET_OWNER.lock().alter(&a.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
     }
 
     let all_keys_locks_message_owner: Vec<String> = SPINLOCK_MESSAGE_REFRESH_FLEET_OWNER.lock().iter().map(|f| { f.key().clone() }).collect();
     for a in all_keys_locks_message_owner {
 
-        if !a.starts_with(&sub_name) {
+        if !a.starts_with(&sid) {
             continue;
         }
 
-        SPINLOCK_MESSAGE_REFRESH_FLEET_OWNER.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+        SPINLOCK_MESSAGE_REFRESH_FLEET_OWNER.lock().alter(&a.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
     }
+
+}
+
+
+pub fn remove_mutex_fleet_sub(sub_name: String) {
+
+    LIST_FLEET_SUBSCRIPTION.lock().remove(&sub_name.clone());
+    SPINLOCK_REFRESH_FLEET.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+    SPINLOCK_MESSAGE_REFRESH_FLEET.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+    SPINLOCK_REFRESH_FLEET_OWNER.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
+    SPINLOCK_MESSAGE_REFRESH_FLEET_OWNER.lock().alter(&sub_name.clone(), |k, v| { return Arc::new(AtomicUsize::new(1)) });
 
 }
 
@@ -110,11 +121,14 @@ pub fn get_all_values_sub() -> Vec<FleetSubscription> {
 }
 
 pub fn get_all_values_sub_by_user_id(user_id: String) -> Vec<FleetSubscription> {
+
+    let user_id_key: String = user_id.replace("-", "").chars().skip(0).take(10).collect();
+
     let map: Vec<FleetSubscription> = LIST_FLEET_SUBSCRIPTION.lock().iter().map(|ref_multi| ref_multi.value().clone()).collect();
     return map.iter().filter(|t| {
-        let parts= t.id_sub.split("_");
+        let parts= t.id_sub.split("-");
         let collection: Vec<&str> = parts.collect();
-        return collection[0] == user_id.as_str();
+        return collection[1] == user_id_key.as_str();
     }).map(|t| t.clone()).collect();
 }
 
@@ -235,7 +249,7 @@ pub async fn run_subscription_fleet(state: Arc<SolanaStateManager>, sub_name: St
             let sub_fleet = get_mutex_fleet_sub(sub_name_local.clone());
 
             let mut hp = HashMap::new();
-            hp.insert(sub_name_local.clone()[..20].to_string() + "_fleet_acc", SubscribeRequestFilterAccounts {
+            hp.insert(sub_name_local.clone()[..30].to_string(), SubscribeRequestFilterAccounts {
                 account: sub_fleet.account_address,
                 owner: vec![],
                 filters: vec![],
@@ -921,7 +935,10 @@ pub async fn run(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_clie
 
                 user_cnt.add_user(s.id.to_string());
                 let ufi: UserFleetInstanceRequest = serde_json::from_str(&msg).unwrap();
-                let key = s.id.to_string() + "-" + &ufi.publicKey;
+
+                let s_id_key: String = s.id.to_string().replace("-", "").chars().skip(0).take(10).collect();
+                let user_id_key: String = ufi.userId.replace("-", "").chars().skip(0).take(10).collect();
+                let key = s_id_key + "-" + user_id_key.as_str() + "-" + &ufi.publicKey;
 
                 log::info!("[SOCKETIO] subscribeToFleetChange for id: {:?}", key);
 
@@ -978,7 +995,9 @@ pub async fn run(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_clie
             |s: SocketRef, user_cnt: State<UserCnt>| async move {
 
                 user_cnt.remove_user(s.id.to_string());
-                remove_mutex_fleet_sub(s.id.to_string());
+
+                let s_id_key: String = s.id.to_string().replace("-", "").chars().skip(0).take(10).collect();
+                remove_mutex_fleet_sub_sid(s_id_key);
 
                 log::info!("[SOCKETIO] on_disconnect for id: {:?}", s.id.to_string());
 

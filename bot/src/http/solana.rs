@@ -1,5 +1,5 @@
 
-use std::time::Duration;
+use std::{str::FromStr, time::Duration};
 
 use actix_web::{
     get, put, web::{Path, ServiceConfig}, HttpResponse, Responder
@@ -134,9 +134,23 @@ async fn get_solana_cached_refresh_acount(addr: Path<String>) -> impl Responder 
             write_version: 0,
             last_update: chrono::offset::Utc::now()
         });
+    } else {
+
+        let msg_err = match res_simple_account.err() {
+            Some(m) => {
+                m.to_string()
+            },
+            None => {
+                String::from_str("no error").unwrap()
+            }
+        };
+
+        state.clean_zero_account(pk);
+
+        return HttpResponse::Ok().json(msg_err);
     }
 
-    HttpResponse::Ok().json(true)
+    return HttpResponse::Ok().json("true");
 
 }
 

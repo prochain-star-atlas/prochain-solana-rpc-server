@@ -152,6 +152,7 @@ async fn get_solana_cached_refresh_acount(addr: Path<String>) -> impl Responder 
         }
 
         return HttpResponse::Ok().json(msg_err);
+        
     }
 
     return HttpResponse::Ok().json("true");

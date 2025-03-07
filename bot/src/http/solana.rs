@@ -136,7 +136,7 @@ async fn get_solana_cached_refresh_acount(addr: Path<String>) -> impl Responder 
         });
     } else {
 
-        let msg_err = match res_simple_account.err() {
+        let mut msg_err = match res_simple_account.err() {
             Some(m) => {
                 m.to_string()
             },
@@ -145,7 +145,11 @@ async fn get_solana_cached_refresh_acount(addr: Path<String>) -> impl Responder 
             }
         };
 
-        state.clean_zero_account(pk);
+        if msg_err.contains("AccountNotFound") {
+            state.clean_zero_account(pk);
+            msg_err = String::from_str("Account has been cleared").unwrap();
+            return HttpResponse::Ok().json(msg_err);
+        }
 
         return HttpResponse::Ok().json(msg_err);
     }

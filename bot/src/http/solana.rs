@@ -13,6 +13,7 @@ use crate::{model::model::GrpcYellowstoneSubscription, oracles::create_socketio_
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        get_solana_reset_cached_acount_info,
         get_solana_cached_acount_info,
         get_solana_cached_refresh_acount,
         get_solana_cached_close_acount,
@@ -29,6 +30,7 @@ pub(super) struct SolanaApi;
 pub(super) fn configure() -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
         config
+            .service(get_solana_reset_cached_acount_info)
             .service(get_solana_cached_acount_info)
             .service(get_solana_cached_refresh_acount)
             .service(get_solana_cached_close_acount)
@@ -38,6 +40,36 @@ pub(super) fn configure() -> impl FnOnce(&mut ServiceConfig) {
             .service(get_solana_cached_subscription_token_account)
             .service(get_solana_subscription_settings);
     }
+}
+
+#[utoipa::path(
+    responses(
+        (status = 200, description = "get cached solana acco", body = [ProchainAccountInfoSchema])
+    )
+)]
+#[get("/solana/cached/reset/account")]
+async fn get_solana_reset_cached_acount_info() -> impl Responder {
+
+    let state = crate::solana_state::get_solana_state();
+    let acc = state.add_account_info(pub_key, acc);
+
+    let acc_info = ProchainAccountInfoSchema { 
+
+        pubkey: acc.pubkey.to_string(), 
+        lamports: acc.lamports, 
+        owner: acc.owner.to_string(), 
+        executable: acc.executable, 
+        rent_epoch: acc.rent_epoch, 
+        data: acc.data, 
+        slot: acc.slot, 
+        write_version: acc.write_version, 
+        txn_signature: acc.txn_signature, 
+        last_update: acc.last_update
+        
+    };
+
+    HttpResponse::Ok().json(acc_info)
+
 }
 
 /// Get list of twich channel.
@@ -152,7 +184,7 @@ async fn get_solana_cached_refresh_acount(addr: Path<String>) -> impl Responder 
         }
 
         return HttpResponse::Ok().json(msg_err);
-        
+
     }
 
     return HttpResponse::Ok().json("true");

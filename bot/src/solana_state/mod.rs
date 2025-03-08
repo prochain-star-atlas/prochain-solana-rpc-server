@@ -208,6 +208,14 @@ impl SolanaStateManager
         }
     }
 
+    pub fn reset_account_info_map(&self) {
+
+        self.state_account.clear();
+        self.state_owner.clear();
+        self.state_program_owner.clear();
+
+    }
+
     pub fn add_account_info(&self, pub_key: Pubkey, acc: ProchainAccountInfo) {
         if self.state_account.contains_key(&pub_key) {
             self.state_account.alter(&pub_key, |k, v| {

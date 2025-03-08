@@ -51,24 +51,9 @@ pub(super) fn configure() -> impl FnOnce(&mut ServiceConfig) {
 async fn get_solana_reset_cached_acount_info() -> impl Responder {
 
     let state = crate::solana_state::get_solana_state();
-    let acc = state.add_account_info(pub_key, acc);
+    state.reset_account_info_map();
 
-    let acc_info = ProchainAccountInfoSchema { 
-
-        pubkey: acc.pubkey.to_string(), 
-        lamports: acc.lamports, 
-        owner: acc.owner.to_string(), 
-        executable: acc.executable, 
-        rent_epoch: acc.rent_epoch, 
-        data: acc.data, 
-        slot: acc.slot, 
-        write_version: acc.write_version, 
-        txn_signature: acc.txn_signature, 
-        last_update: acc.last_update
-        
-    };
-
-    HttpResponse::Ok().json(acc_info)
+    HttpResponse::Ok().json(true)
 
 }
 

@@ -351,7 +351,7 @@ pub mod rpc_accounts {
             meta:Self::Metadata,
             signatures: Vec<String>,
         ) -> BoxFuture<Result<Response<Vec<Option<TransactionStatus>>>>> {
-            Box::pin(async move { meta.get_signature_statuses(signatures) })
+            Box::pin(async move { meta.get_signature_statuses(signatures).await })
         }
 
         fn get_transaction(

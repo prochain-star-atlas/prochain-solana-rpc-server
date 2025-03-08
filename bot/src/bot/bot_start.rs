@@ -13,7 +13,7 @@ use crate::oracles::create_subscription_oracle;
 use tokio::{ signal, task };
 use solana_sdk::pubkey;
 
-pub fn init_start() {
+pub async fn init_start() {
 
     let arc_state = solana_state::get_solana_state();
 
@@ -33,12 +33,12 @@ pub fn init_start() {
             String::from("CRAFT2RPXPJWCEix4WpJST3E7NLf79GTqZUL75wngXo5"),
             String::from("pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9")]);
 
-    add_user_address_to_index(pubkey!("GAMEzqJehF8yAnKiTARUuhZMvLvkZVAsCVri5vSfemLr"), arc_state.clone(), arc_state.get_sol_client().clone());
-    add_user_address_to_index(pubkey!("SAGE2HAwep459SNq61LHvjxPk4pLPEJLoMETef7f7EE"), arc_state.clone(), arc_state.get_sol_client().clone());
-    add_user_address_to_index(pubkey!("traderDnaR5w6Tcoi3NFm53i48FTDNbGjBSZwWXDRrg"), arc_state.clone(), arc_state.get_sol_client().clone());
-    add_user_address_to_index(pubkey!("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk"), arc_state.clone(), arc_state.get_sol_client().clone());
-    add_user_address_to_index(pubkey!("CRAFT2RPXPJWCEix4WpJST3E7NLf79GTqZUL75wngXo5"), arc_state.clone(), arc_state.get_sol_client().clone());
-    add_user_address_to_index(pubkey!("pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9"), arc_state.clone(), arc_state.get_sol_client().clone());
+    add_user_address_to_index(pubkey!("GAMEzqJehF8yAnKiTARUuhZMvLvkZVAsCVri5vSfemLr"), arc_state.clone(), arc_state.get_sol_client().clone()).await;
+    add_user_address_to_index(pubkey!("SAGE2HAwep459SNq61LHvjxPk4pLPEJLoMETef7f7EE"), arc_state.clone(), arc_state.get_sol_client().clone()).await;
+    add_user_address_to_index(pubkey!("traderDnaR5w6Tcoi3NFm53i48FTDNbGjBSZwWXDRrg"), arc_state.clone(), arc_state.get_sol_client().clone()).await;
+    add_user_address_to_index(pubkey!("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk"), arc_state.clone(), arc_state.get_sol_client().clone()).await;
+    add_user_address_to_index(pubkey!("CRAFT2RPXPJWCEix4WpJST3E7NLf79GTqZUL75wngXo5"), arc_state.clone(), arc_state.get_sol_client().clone()).await;
+    add_user_address_to_index(pubkey!("pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9"), arc_state.clone(), arc_state.get_sol_client().clone()).await;
 
 }
 
@@ -54,11 +54,13 @@ pub async fn start() {
 
     let arc_state = solana_state::get_solana_state();
 
-    init_start();
+    init_start().await;
 
     create_token_list_oracle::create_token_list(arc_state.clone(), arc_state.get_sol_client().clone()).await;
 
-    create_subscription_oracle::run(arc_state.clone(), arc_state.get_sol_client().clone(), String::from("sage")).await;
+    create_subscription_oracle::init_sub(arc_state.clone(), arc_state.get_sol_client().clone(), String::from("sage")).await;
+
+    create_subscription_oracle::run(arc_state.clone(), String::from("sage")).await;
 
     let default_rpc_max_multiple_accounts = MAX_MULTIPLE_ACCOUNTS;
     let config: JsonRpcConfig = JsonRpcConfig {
@@ -73,7 +75,7 @@ pub async fn start() {
 
     start_web_server::start_httpd();
 
-    let _cron = create_cron_scheduler(arc_state.clone(), arc_state.get_sol_client().clone()).await;
+    let _cron = create_cron_scheduler().await;
 
     log::info!("All Oracles Started");
 

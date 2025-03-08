@@ -5,7 +5,7 @@ use {
         }}, solana_state::SolanaStateManager}, jsonrpc_core::MetaIoHandler, jsonrpc_http_server::{
         hyper, AccessControlAllowOrigin, DomainsValidation, RequestMiddleware,
         RequestMiddlewareAction, ServerBuilder,
-    }, log::*, solana_client::rpc_client::RpcClient, solana_perf::thread::renice_this_thread, std::{
+    }, log::*, solana_client::nonblocking::rpc_client::RpcClient, solana_perf::thread::renice_this_thread, std::{
         net::SocketAddr, sync::Arc, thread::{self, Builder, JoinHandle}
     }
 };

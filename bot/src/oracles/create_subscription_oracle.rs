@@ -22,7 +22,7 @@ use futures::Sink;
 use lazy_static::lazy_static;
 use parking_lot::{Mutex};
 use dashmap::DashMap;
-use solana_client::{rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig}};
+use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig}};
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey, signer::Signer};
 use tracing::info;
 use yellowstone_grpc_proto::geyser::{subscribe_request_filter_accounts_filter::Filter, subscribe_request_filter_accounts_filter_lamports::Cmp, SubscribeRequestFilterAccountsFilter, SubscribeRequestFilterAccountsFilterLamports, SubscribeRequestFilterTransactions};
@@ -120,16 +120,15 @@ pub fn exit_subscription() {
     SPINLOCK_REFRESH_MESSAGE.swap(1, Ordering::Relaxed);
 }
 
-pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub_name: String) {
+pub async fn init_sub(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub_name: String) {
 
     let local_arc = state.clone();
-    let sub_name_local = sub_name.clone();
-    
+
     let programs = get_mutex_program_sub(sub_name.clone());   
-    programs.iter().for_each(|prog| {
+    for prog in programs.iter() {
         log::info!("starting processing program: {}", prog);
 
-        let res = sol_client.get_program_accounts(&Pubkey::try_from(prog.as_str()).unwrap());
+        let res = sol_client.get_program_accounts(&Pubkey::try_from(prog.as_str()).unwrap()).await;
 
         if res.is_ok() {
 
@@ -170,13 +169,14 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
         }       
 
         log::info!("finished processing program: {}", prog);
-    }); 
+    }
 
     let accounts = get_mutex_account_sub(sub_name.clone());   
-    accounts.iter().for_each(|acc| {
+    for acc in accounts.iter() {
+
         log::info!("starting processing account: {}", acc);
 
-        let res = sol_client.get_account(&Pubkey::try_from(acc.as_str()).unwrap());   
+        let res = sol_client.get_account(&Pubkey::try_from(acc.as_str()).unwrap()).await;   
 
         if res.is_ok() {
 
@@ -205,8 +205,16 @@ pub async fn run(state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>, sub
         }       
 
         log::info!("finished processing accounts: {}", acc);
-    }); 
 
+    }
+
+}
+
+pub async fn run(state: Arc<SolanaStateManager>, sub_name: String) {
+
+    let local_arc = state.clone();
+    let sub_name_local = sub_name.clone();
+    
     let _1 = tokio::spawn(async move {
 
         loop {

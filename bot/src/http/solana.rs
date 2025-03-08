@@ -50,11 +50,15 @@ pub(super) fn configure() -> impl FnOnce(&mut ServiceConfig) {
 #[get("/solana/cached/reset/account")]
 async fn get_solana_reset_cached_acount_info() -> impl Responder {
 
-    let state = crate::solana_state::get_solana_state();
-    state.reset_account_info_map();
+    let arc_state = crate::solana_state::get_solana_state();
+    arc_state.reset_account_info_map();
 
     crate::oracles::create_subscription_oracle::reset_all_list_sub();   
-    crate::bot::bot_start::init_start();
+
+    crate::bot::bot_start::init_start().await;
+    
+    crate::oracles::create_token_list_oracle::create_token_list(arc_state.clone(), arc_state.get_sol_client().clone()).await;
+    crate::oracles::create_subscription_oracle::init_sub(arc_state.clone(), arc_state.get_sol_client().clone(), String::from("sage")).await;
 
     crate::oracles::create_subscription_oracle::refresh();
     crate::oracles::create_subscription_oracle::refresh_owner();

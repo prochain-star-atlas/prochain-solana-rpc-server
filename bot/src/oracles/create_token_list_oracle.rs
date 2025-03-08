@@ -2,7 +2,7 @@
 use flate2::bufread::ZlibDecoder;
 use hashbrown::HashSet;
 use serde::{Deserialize, Serialize};
-use solana_client::rpc_client::RpcClient;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 use std::time::Duration;
 use dashmap::DashMap;
@@ -39,7 +39,7 @@ pub async fn create_token_list(state: Arc<SolanaStateManager>, sol_client: Arc<R
     
         log::info!("initializing star atlas tokens: {}", response_atlas.len());
     
-        let _1 = response_atlas.iter().for_each(|f| {
+        for f in response_atlas.iter() {
     
             let mint_pk = f.mint.clone();
 
@@ -49,13 +49,13 @@ pub async fn create_token_list(state: Arc<SolanaStateManager>, sol_client: Arc<R
                 if pk.is_ok() {
                     let pk_ok = pk.unwrap();
 
-                    add_user_address_to_index(pk_ok.clone(), state.clone(), sol_client.clone());
+                    add_user_address_to_index(pk_ok.clone(), state.clone(), sol_client.clone()).await;
 
                     vec_pk.push(pk_ok.to_string());
                 }
             }
     
-        });
+        }
     
         crate::oracles::create_subscription_oracle::set_mutex_token_sub(String::from("sage"), vec_pk.clone());
 

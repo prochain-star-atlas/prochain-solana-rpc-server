@@ -1,17 +1,18 @@
 
 use itertools::Itertools;
 use parking_lot::Mutex;
-use solana_client::{rpc_client::RpcClient, rpc_request::TokenAccountsFilter};
+use solana_client::nonblocking::rpc_client::RpcClient;
+use solana_client::rpc_request::TokenAccountsFilter;
 use solana_sdk::pubkey::Pubkey;
 use crate::solana_state::{ProchainAccountInfo, SolanaStateManager};
 use std::sync::Arc;
 
-pub fn add_user_address_to_index_with_all_child_with_sub(addr: Pubkey, state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) {
+pub async fn add_user_address_to_index_with_all_child_with_sub(addr: Pubkey, state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) {
 
     log::info!("starting add_user_address_to_index: {}", addr);
 
     let res = sol_client.get_token_accounts_by_owner(&addr, 
-        TokenAccountsFilter::ProgramId(Pubkey::try_from("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA").unwrap()));   
+        TokenAccountsFilter::ProgramId(Pubkey::try_from("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA").unwrap())).await;   
 
     if res.is_ok() {
 
@@ -23,11 +24,11 @@ pub fn add_user_address_to_index_with_all_child_with_sub(addr: Pubkey, state: Ar
 
         let mut vec_acc_new: Vec<String> = vec![];
 
-        response.iter().for_each(|acc| {
+        for acc in response.iter() {
 
             let pk_c = Pubkey::try_from(acc.pubkey.as_str()).unwrap();
 
-            let acc = sol_client.get_account(&pk_c);
+            let acc = sol_client.get_account(&pk_c).await;
 
             if acc.is_ok() {
 
@@ -58,8 +59,8 @@ pub fn add_user_address_to_index_with_all_child_with_sub(addr: Pubkey, state: Ar
                 }
 
             }
-
-        });
+            
+        }
 
         let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
         vec_acc.append(&mut vec_acc_new);
@@ -71,11 +72,11 @@ pub fn add_user_address_to_index_with_all_child_with_sub(addr: Pubkey, state: Ar
 
 }
 
-pub fn add_user_address_to_index_with_sub(addr: Pubkey, state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) {
+pub async fn add_user_address_to_index_with_sub(addr: Pubkey, state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) {
 
     log::info!("starting add_user_address_to_index: {}", addr);
 
-    let res = sol_client.get_account(&addr);   
+    let res = sol_client.get_account(&addr).await;   
 
     if res.is_ok() {
 
@@ -108,11 +109,11 @@ pub fn add_user_address_to_index_with_sub(addr: Pubkey, state: Arc<SolanaStateMa
 
 }
 
-pub fn add_user_address_to_index(addr: Pubkey, state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) {
+pub async fn add_user_address_to_index(addr: Pubkey, state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) {
 
     log::info!("starting add_user_address_to_index: {}", addr);
 
-    let res = sol_client.get_account(&addr);   
+    let res = sol_client.get_account(&addr).await;   
 
     if res.is_ok() {
 

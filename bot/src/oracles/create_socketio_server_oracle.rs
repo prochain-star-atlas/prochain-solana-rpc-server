@@ -8,7 +8,7 @@ use socketioxide::{
     SocketIo,
 };
 use solana_account_decoder::{parse_token::UiTokenAccount, UiAccountData, UiAccountEncoding};
-use solana_client::{rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig, RpcTokenAccountsFilter}, rpc_filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType}};
+use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig, RpcTokenAccountsFilter}, rpc_filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType}};
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 use utoipa::ToSchema;
 use std::sync::Arc;

@@ -49,7 +49,7 @@ const SPL_TOKEN_ACCOUNT_LENGTH: usize = 165;
 #[derive(Clone)]
 pub struct JsonRpcRequestProcessor {
     pub config: JsonRpcConfig,
-    pub sol_client: Arc<solana_client::rpc_client::RpcClient>,
+    pub sol_client: Arc<solana_client::nonblocking::rpc_client::RpcClient>,
     pub sol_state: Arc<SolanaStateManager>
 }
 
@@ -200,7 +200,7 @@ fn get_spl_token_mint_filter(program_id: &Pubkey, filters: &[RpcFilterType]) -> 
 }
 
 impl JsonRpcRequestProcessor {
-    pub fn new(config: JsonRpcConfig, sol_client: Arc<solana_client::rpc_client::RpcClient>, sol_state: Arc<SolanaStateManager>) -> Self {
+    pub fn new(config: JsonRpcConfig, sol_client: Arc<solana_client::nonblocking::rpc_client::RpcClient>, sol_state: Arc<SolanaStateManager>) -> Self {
         Self {
             config,
             sol_client,
@@ -208,14 +208,14 @@ impl JsonRpcRequestProcessor {
         }
     }
 
-    fn get_token_program_id_and_mint(
+    async fn get_token_program_id_and_mint(
         &self,
         token_account_filter: TokenAccountsFilter,
         force_refresh: Option<bool>
     ) -> Result<(Pubkey, Option<Pubkey>)> {
         match token_account_filter {
             TokenAccountsFilter::Mint(mint) => {
-                let (mint_owner, _) = self.get_mint_owner_and_additional_data(&mint, force_refresh)?;
+                let (mint_owner, _) = self.get_mint_owner_and_additional_data(&mint, force_refresh).await?;
                 if !is_known_spl_token_id(&mint_owner) {
                     return Err(Error::invalid_params(
                         "Invalid param: not a Token mint".to_string(),
@@ -235,7 +235,7 @@ impl JsonRpcRequestProcessor {
         }
     }
 
-    fn get_prochain_account(&self, pubkey: &Pubkey, config: RpcAccountInfoConfig, force_refresh: Option<bool>) -> Option<ProchainAccountInfo> {
+    async fn get_prochain_account(&self, pubkey: &Pubkey, config: RpcAccountInfoConfig, force_refresh: Option<bool>) -> Option<ProchainAccountInfo> {
 
         let force_refresh_var = force_refresh.unwrap_or(false);
 
@@ -260,7 +260,7 @@ impl JsonRpcRequestProcessor {
 
             info!("[RPC] get_account_info request received: {}", pubkey.to_string());
 
-            let res = self.sol_client.get_account_with_config(pubkey, config);
+            let res = self.sol_client.get_account_with_config(pubkey, config).await;
 
             match res {
 
@@ -326,7 +326,7 @@ impl JsonRpcRequestProcessor {
 
         let config = config.unwrap_or_default();
 
-        let pro_account = self.get_prochain_account(pubkey, config.clone(), force_refresh);
+        let pro_account = self.get_prochain_account(pubkey, config.clone(), force_refresh).await;
 
         let slot: u64 = self.sol_state.get_slot();
 
@@ -390,7 +390,7 @@ impl JsonRpcRequestProcessor {
 
                 info!("[RPC] get_account_info request received: {}", pubkey.to_string());
 
-                let res = self.sol_client.get_account_with_config(&pubkey, config.clone()).unwrap();
+                let res = self.sol_client.get_account_with_config(&pubkey, config.clone()).await.unwrap();
                 let acc_pk = res.value.clone().unwrap_or_default();
                 self.sol_state.add_account_info(pubkey.clone(), ProchainAccountInfo {
                     data: acc_pk.data,
@@ -434,7 +434,7 @@ impl JsonRpcRequestProcessor {
             })
     }
 
-    pub fn get_mint_owner_and_additional_data(
+    pub async fn get_mint_owner_and_additional_data(
         &self,
         mint: &Pubkey,
         force_refresh: Option<bool>
@@ -446,7 +446,7 @@ impl JsonRpcRequestProcessor {
             ))
         } else {
             let config = RpcAccountInfoConfig { commitment: Some(CommitmentConfig::confirmed()), encoding: None, data_slice: None, min_context_slot: None };
-            let mint_account = self.get_prochain_account(&mint.clone(), config, force_refresh);
+            let mint_account = self.get_prochain_account(&mint.clone(), config, force_refresh).await;
 
             if mint_account.is_some() {
                 let mintc = mint_account.unwrap();
@@ -458,24 +458,37 @@ impl JsonRpcRequestProcessor {
         }
     }
 
-    pub fn get_parsed_token_accounts(
+    pub async fn get_parsed_token_accounts(
         &self,
         keyed_accounts: Vec<ProchainAccountInfo>,
         force_refresh: Option<bool>
     ) -> Vec<RpcKeyedAccount>
     {
         let mut mint_data: HashMap<Pubkey, AccountAdditionalDataV2> = HashMap::new();
-        let r: Vec<RpcKeyedAccount> = keyed_accounts.iter().filter_map(move |ka| {
-            let additional_data = get_token_account_mint(&ka.data()).and_then(|mint_pubkey| {
-                mint_data.get(&mint_pubkey).cloned().or_else(|| {
-                    let (_, data) = self.get_mint_owner_and_additional_data(&mint_pubkey, force_refresh).ok()?;
-                    let data = AccountAdditionalDataV2 {
-                        spl_token_additional_data: Some(data),
-                    };
-                    mint_data.insert(mint_pubkey, data);
-                    Some(data)
-                })
-            });
+        let mut r: Vec<RpcKeyedAccount> = vec![];
+        for ka in keyed_accounts.iter() {
+
+            let mint_pubkey = get_token_account_mint(&ka.data());
+            let mut additional_data: Option<AccountAdditionalDataV2> = None;
+
+            if mint_pubkey.is_none() {
+                additional_data = None;
+            } else {
+                let val = mint_data.get(&mint_pubkey.unwrap()).cloned();
+                if val.is_some() {
+                    additional_data = val;
+                } else {
+                    let t1 = self.get_mint_owner_and_additional_data(&mint_pubkey.unwrap(), force_refresh).await;
+                    if t1.is_ok() {
+                        let data = AccountAdditionalDataV2 {
+                            spl_token_additional_data: Some(t1.unwrap().1),
+                        };
+                        mint_data.insert(mint_pubkey.unwrap(), data);
+                        additional_data = Some(data);
+                    }
+                }
+            }
+            
     
             let maybe_encoded_account = UiAccount::encode(
                 &ka.pubkey,
@@ -484,15 +497,14 @@ impl JsonRpcRequestProcessor {
                 additional_data,
                 None,
             );
+
             if let UiAccountData::Json(_) = &maybe_encoded_account.data {
-                Some(RpcKeyedAccount {
+                r.push(RpcKeyedAccount {
                     pubkey: ka.pubkey.to_string(),
                     account: maybe_encoded_account,
-                })
-            } else {
-                None
+                });
             }
-        }).collect();
+        }
 
         return r;
     }
@@ -683,7 +695,7 @@ impl JsonRpcRequestProcessor {
 
             let accounts = if is_known_spl_token_id(program_id) && encoding == UiAccountEncoding::JsonParsed
             {
-                self.get_parsed_token_accounts(keyed_accounts, force_refresh)
+                self.get_parsed_token_accounts(keyed_accounts, force_refresh).await
             } else {
                 keyed_accounts
                     .into_iter()
@@ -702,7 +714,7 @@ impl JsonRpcRequestProcessor {
 
             info!("[RPC] get_program_accounts request received: {}", program_id.to_string());
 
-            let res = self.sol_client.get_program_accounts_with_config(program_id, c.clone());       
+            let res = self.sol_client.get_program_accounts_with_config(program_id, c.clone()).await;       
 
             if res.is_err() {
                 return Err(jsonrpc_core::error::Error::invalid_params(res.err().unwrap().to_string()));
@@ -711,9 +723,9 @@ impl JsonRpcRequestProcessor {
             let ar_results = res.unwrap();
             let mut ar_pkey: Vec<Pubkey> = vec![];
 
-            ar_results.iter().for_each(|f| {
+            for f in ar_results.iter() {
 
-                let res_simple_account = self.sol_client.get_account(&f.0.clone()).unwrap();
+                let res_simple_account = self.sol_client.get_account(&f.0.clone()).await.unwrap();
 
                 ar_pkey.push(f.0.clone());
                 self.sol_state.add_account_info(f.0.clone(), ProchainAccountInfo {
@@ -735,7 +747,7 @@ impl JsonRpcRequestProcessor {
                 };
                 ar_keyed_acc.push(aa);
 
-            });
+            }
 
             //self.sol_state. (program_id.clone(), ar_pkey);
             let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_program_sub(String::from("sage"));
@@ -795,11 +807,11 @@ impl JsonRpcRequestProcessor {
 
             info!("[RPC] get_token_supply request received: {}", token_id_str);
 
-            let res = self.sol_client.get_token_supply_with_commitment(&pk, opt.commitment.unwrap_or(CommitmentConfig::confirmed())).unwrap();
+            let res = self.sol_client.get_token_supply_with_commitment(&pk, opt.commitment.unwrap_or(CommitmentConfig::confirmed())).await.unwrap();
            
             ui_token_amount = res.value;
 
-            let acc1 = self.sol_client.get_account(&pk).unwrap();
+            let acc1 = self.sol_client.get_account(&pk).await.unwrap();
             self.sol_state.add_account_info(pk.clone(), ProchainAccountInfo {
                 data: acc1.data,
                 executable: acc1.executable,
@@ -877,7 +889,7 @@ impl JsonRpcRequestProcessor {
             };
 
             let pb = Pubkey::try_from(program_id_str.as_str()).unwrap(); 
-            let (token_program_id, mint) = self.get_token_program_id_and_mint(taf, force_refresh)?;
+            let (token_program_id, mint) = self.get_token_program_id_and_mint(taf, force_refresh).await?;
 
             info!("[MEMORY] get_token_account_by_owner request received: {}", program_id_str);
 
@@ -898,7 +910,7 @@ impl JsonRpcRequestProcessor {
                 sort_results,
             );
             let accounts = if encoding == UiAccountEncoding::JsonParsed {
-                self.get_parsed_token_accounts(keyed_accounts, force_refresh)
+                self.get_parsed_token_accounts(keyed_accounts, force_refresh).await
             } else {
                 keyed_accounts
                     .into_iter()
@@ -919,7 +931,7 @@ impl JsonRpcRequestProcessor {
             let res_rpc: RpcResult<Vec<RpcKeyedAccount>> = self.sol_client.send(
                 RpcRequest::GetTokenAccountsByOwner,
                 json!([program_id_str, token_account_filter, config]),
-            );
+            ).await;
     
             let res_unwrapped = res_rpc;
 
@@ -931,9 +943,9 @@ impl JsonRpcRequestProcessor {
 
             let mut ar_pkey: Vec<String> = vec![];
 
-            ar_results.value.iter().for_each(|f| {
+            for f in ar_results.value.iter() {
                 let pb = Pubkey::try_from(f.pubkey.as_str()).unwrap();  
-                let acc_raw = self.sol_client.get_account(&pb).unwrap();       
+                let acc_raw = self.sol_client.get_account(&pb).await.unwrap();       
                 ar_pkey.push(pb.to_string());
 
                 let pca = ProchainAccountInfo {
@@ -951,7 +963,7 @@ impl JsonRpcRequestProcessor {
 
                 self.sol_state.add_account_info(pb, pca.clone());
 
-            });
+            }
 
             let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_program_sub(String::from("sage"));
             if !vec_acc.contains(&program_id_str.clone()) {
@@ -995,7 +1007,7 @@ impl JsonRpcRequestProcessor {
         let res_rpc: RpcResult<Vec<RpcKeyedAccount>> = self.sol_client.send(
             RpcRequest::GetTokenAccountsByOwner,
             json!([program_id_str, token_account_filter, config.clone()]),
-        );
+        ).await;
 
         if res_rpc.is_err() {
             return Err(jsonrpc_core::error::Error::internal_error());
@@ -1005,9 +1017,10 @@ impl JsonRpcRequestProcessor {
 
         let mut ar_pkey: Vec<String> = vec![];
 
-        ar_results.value.iter().for_each(|f| {
+        for f in ar_results.value.iter() {
+
             let pb = Pubkey::try_from(f.pubkey.as_str()).unwrap();  
-            let acc_raw = self.sol_client.get_account(&pb).unwrap();       
+            let acc_raw = self.sol_client.get_account(&pb).await.unwrap();       
             ar_pkey.push(pb.to_string());
 
             let pca = ProchainAccountInfo {
@@ -1025,7 +1038,7 @@ impl JsonRpcRequestProcessor {
 
             self.sol_state.add_account_info(pb, pca.clone());
 
-        });
+        }
 
         let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_program_sub(String::from("sage"));
         if !vec_acc.contains(&program_id_str.clone()) {
@@ -1084,17 +1097,17 @@ impl JsonRpcRequestProcessor {
             let token_account = StateWithExtensions::<TokenAccount>::unpack(c_acc_r.data())
                 .map_err(|_| Error::invalid_params("Invalid param: not a Token account".to_string()))?;
             let mint = Pubkey::try_from(token_account.base.mint.to_string().as_str()).unwrap();
-            let (_, data) = self.get_mint_owner_and_additional_data(&mint, force_refresh)?;
+            let (_, data) = self.get_mint_owner_and_additional_data(&mint, force_refresh).await?;
             ui_token_amount = token_amount_to_ui_amount_v2(token_account.base.amount, &data);
 
         } else {
 
             info!("[RPC] get_token_accounts_balance request received: {}", program_id_str);
 
-            let res = self.sol_client.get_token_account_balance(&pk).unwrap();
+            let res = self.sol_client.get_token_account_balance(&pk).await.unwrap();
             ui_token_amount = res;
 
-            let acc1 = self.sol_client.get_account(&pk).unwrap();
+            let acc1 = self.sol_client.get_account(&pk).await.unwrap();
             self.sol_state.add_account_info(pk.clone(), ProchainAccountInfo {
                 data: acc1.data,
                 executable: acc1.executable,
@@ -1143,7 +1156,7 @@ impl JsonRpcRequestProcessor {
         let mut result_final: (Hash, u64) = (Hash::new_unique(), 0);
         let mut success = false;
         loop {
-            let result = self.sol_client.get_latest_blockhash_with_commitment(CommitmentConfig { commitment: CommitmentLevel::Confirmed });
+            let result = self.sol_client.get_latest_blockhash_with_commitment(CommitmentConfig { commitment: CommitmentLevel::Confirmed }).await;
     
             if result.is_ok() {
                 result_final = result.unwrap();
@@ -1179,7 +1192,7 @@ impl JsonRpcRequestProcessor {
         let mut result_final: (Hash, u64) = (Hash::new_unique(), 0);
         let mut success = false;
         loop {
-            let result = self.sol_client.get_latest_blockhash_with_commitment(CommitmentConfig { commitment: CommitmentLevel::Confirmed });
+            let result = self.sol_client.get_latest_blockhash_with_commitment(CommitmentConfig { commitment: CommitmentLevel::Confirmed }).await;
     
             if result.is_ok() {
                 result_final = result.unwrap();
@@ -1226,7 +1239,7 @@ impl JsonRpcRequestProcessor {
         let (wire_transaction, unsanitized_tx) =
             decode_and_deserialize::<VersionedTransaction>(data, binary_encoding)?;
 
-        return Ok(self.sol_client.send_transaction_with_config(&unsanitized_tx, config.unwrap_or_default()).unwrap().to_string());
+        return Ok(self.sol_client.send_transaction_with_config(&unsanitized_tx, config.unwrap_or_default()).await.unwrap().to_string());
     }
 
     pub async fn get_epoch_info_with_commitment(
@@ -1236,10 +1249,10 @@ impl JsonRpcRequestProcessor {
         let def = config.unwrap_or_default();
         let commit = def.commitment.unwrap_or_default();
         info!("[RPC] get_epoch_info_with_commitment");
-        return Ok(self.sol_client.get_epoch_info_with_commitment(commit).unwrap());
+        return Ok(self.sol_client.get_epoch_info_with_commitment(commit).await.unwrap());
     }
 
-    pub fn get_signature_statuses(
+    pub async fn get_signature_statuses(
         &self,
         signatures: Vec<String>,
     ) -> Result<Response<Vec<Option<TransactionStatus>>>> {
@@ -1247,7 +1260,7 @@ impl JsonRpcRequestProcessor {
         
         let vec_sign: Vec<Signature> = signatures.iter().map(|f| Signature::from_str(f.as_str()).unwrap()).collect();
 
-        let to = self.sol_client.get_signature_statuses(vec_sign.as_slice()).unwrap();
+        let to = self.sol_client.get_signature_statuses(vec_sign.as_slice()).await.unwrap();
 
         Ok(RpcResponse {
             context: to.context,
@@ -1269,7 +1282,7 @@ impl JsonRpcRequestProcessor {
         // let max_supported_transaction_version = config.max_supported_transaction_version;
         // let commitment = config.commitment.unwrap_or_default();
         
-        return Ok(Some(self.sol_client.get_transaction_with_config(&signature, config).unwrap()));
+        return Ok(Some(self.sol_client.get_transaction_with_config(&signature, config).await.unwrap()));
 
     }
 

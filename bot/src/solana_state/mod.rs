@@ -3,13 +3,13 @@ pub mod error;
 use dashmap::DashMap;
 use log::info;
 use rayon::vec;
-use solana_client::rpc_client::RpcClient;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 use utoipa::ToSchema;
 use yellowstone_grpc_proto::geyser::SubscribeUpdateAccountInfo;
 use core::str;
 use std::{
-    sync::Arc, time::Duration
+    str::FromStr, sync::Arc, time::Duration
 };
 use solana_sdk::{
     account::ReadableAccount, clock::Epoch
@@ -122,7 +122,7 @@ impl SolanaStateManager
             slot: Arc::new(slot_a),
             blockhash: Arc::new(blockhash_b),
             blockheight: Arc::new(blockheight_b),
-            sol_client: Arc::new(RpcClient::new_with_timeout_and_commitment("http://192.168.100.98:18899", Duration::from_secs(240), CommitmentConfig::confirmed()))
+            sol_client: Arc::new(solana_client::nonblocking::rpc_client::RpcClient::new_with_timeout_and_commitment(String::from_str("http://192.168.100.98:18899").unwrap(), Duration::from_secs(240), CommitmentConfig::confirmed()))
         }
     }
 

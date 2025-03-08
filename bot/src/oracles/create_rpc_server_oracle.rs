@@ -1,5 +1,5 @@
 use std::{net::{IpAddr, Ipv4Addr, SocketAddr}, sync::Arc};
-use solana_client::rpc_client::RpcClient;
+use solana_client::nonblocking::rpc_client::RpcClient;
 
 use crate::{rpc::rpc_service::{JsonRpcConfig, JsonRpcService}, solana_state::SolanaStateManager};
 

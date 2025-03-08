@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use crate::{cron::start_cron_scheduler::create_cron_scheduler, http::start_web_server, oracles::{
     create_rpc_server_oracle, 
@@ -8,22 +8,12 @@ use crate::{cron::start_cron_scheduler::create_cron_scheduler, http::start_web_s
 }, rpc::rpc_service::JsonRpcConfig, solana_state::{self}, utils::types::{ events::*, structs::bot::Bot }};
 
 use parking_lot::RwLock;
-use solana_client::{rpc_client::RpcClient, rpc_request::MAX_MULTIPLE_ACCOUNTS};
+use solana_client::rpc_request::MAX_MULTIPLE_ACCOUNTS;
 use crate::oracles::create_subscription_oracle;
-use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
+use solana_sdk::pubkey::Pubkey;
 use tokio::{ signal, task };
 
-pub async fn start() {
-    log::info!("Starting Bot");   
-
-    // ** prepare block oracle
-
-    // hold all oracles inside bot struct
-    let bot = Arc::new(
-        RwLock::new(Bot::new())
-    );
-
-    let sol_client = Arc::new(RpcClient::new_with_timeout_and_commitment("http://192.168.100.98:18899", Duration::from_secs(240), CommitmentConfig::confirmed()));
+pub async fn init_start() {
     let arc_state = solana_state::get_solana_state();
 
     crate::oracles::create_subscription_oracle::set_mutex_token_owner_sub(String::from("sage"), 
@@ -43,11 +33,26 @@ pub async fn start() {
             String::from("CRAFT2RPXPJWCEix4WpJST3E7NLf79GTqZUL75wngXo5"),
             String::from("pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9")]);
 
-    create_token_list_oracle::create_token_list(arc_state.clone(), sol_client.clone()).await;
+    create_token_list_oracle::create_token_list(arc_state.clone(), arc_state.get_sol_client().clone()).await;
 
-    handle_user_address_oracle::add_user_address_to_index_with_all_child_with_sub(Pubkey::try_from("Hc9iztjxoMiE9uv38WUvwzLqWCN153eF5mFSLZUecB7J").unwrap(), arc_state.clone(), sol_client.clone());
+    handle_user_address_oracle::add_user_address_to_index_with_all_child_with_sub(Pubkey::try_from("Hc9iztjxoMiE9uv38WUvwzLqWCN153eF5mFSLZUecB7J").unwrap(), arc_state.clone(), arc_state.get_sol_client().clone());
+}
 
-    create_subscription_oracle::run(arc_state.clone(), sol_client.clone(), String::from("sage")).await;
+pub async fn start() {
+    log::info!("Starting Bot");   
+
+    // ** prepare block oracle
+
+    // hold all oracles inside bot struct
+    let bot = Arc::new(
+        RwLock::new(Bot::new())
+    );
+
+    let arc_state = solana_state::get_solana_state();
+
+    init_start().await;
+
+    create_subscription_oracle::run(arc_state.clone(), arc_state.get_sol_client().clone(), String::from("sage")).await;
 
     let default_rpc_max_multiple_accounts = MAX_MULTIPLE_ACCOUNTS;
     let config: JsonRpcConfig = JsonRpcConfig {
@@ -56,13 +61,13 @@ pub async fn start() {
         rpc_niceness_adj: 0,
     };
 
-    create_rpc_server_oracle::run(config.clone(), arc_state.clone(), sol_client.clone()).await;
+    create_rpc_server_oracle::run(config.clone(), arc_state.clone(), arc_state.get_sol_client().clone()).await;
 
-    create_socketio_server_oracle::start_socketio_httpd(config.clone(), arc_state.clone(), sol_client.clone());
+    create_socketio_server_oracle::start_socketio_httpd(config.clone(), arc_state.clone(), arc_state.get_sol_client().clone());
 
     start_web_server::start_httpd();
 
-    let _cron = create_cron_scheduler(arc_state.clone(), sol_client.clone()).await;
+    let _cron = create_cron_scheduler(arc_state.clone(), arc_state.get_sol_client().clone()).await;
 
     log::info!("All Oracles Started");
 

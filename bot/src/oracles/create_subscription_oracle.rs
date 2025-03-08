@@ -40,6 +40,13 @@ lazy_static! {
     static ref SPINLOCK_REFRESH_MESSAGE_TOKENACCOUNT: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
 }
 
+pub fn reset_all_list_sub() {
+    LIST_ACCOUNT_SUBSCRIPTION.lock().clear();
+    LIST_PROGRAM_ACCOUNT_SUBSCRIPTION.lock().clear();
+    LIST_TOKEN_ACCOUNT_SUBSCRIPTION.lock().clear();
+    LIST_TOKEN_OWNER_ACCOUNT_SUBSCRIPTION.lock().clear();
+}
+
 pub fn set_mutex_account_sub(sub_name: String, lst_vec: Vec<String>) {
     LIST_ACCOUNT_SUBSCRIPTION.lock().insert(sub_name, lst_vec);
 }

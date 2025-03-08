@@ -14,6 +14,7 @@ use {
     solana_sdk::pubkey::Pubkey,
     solana_sdk::hash::Hash
 };
+use solana_sdk::pubkey;
 
 pub const MAX_REQUEST_PAYLOAD_SIZE: usize = 50 * (1 << 10); // 50kB
 
@@ -45,7 +46,7 @@ pub mod rpc_accounts {
     use solana_account_decoder::parse_token::UiTokenAmount;
     use solana_client::rpc_client::SerializableTransaction;
     use solana_runtime::commitment;
-    use solana_sdk::{commitment_config::CommitmentConfig, epoch_info::EpochInfo, signature::Signature, transaction::VersionedTransaction};
+    use solana_sdk::{commitment_config::CommitmentConfig, epoch_info::EpochInfo, pubkey, signature::Signature, transaction::VersionedTransaction};
     use solana_transaction_status::{EncodedConfirmedTransactionWithStatusMeta, TransactionStatus};
     
 
@@ -73,6 +74,14 @@ pub mod rpc_accounts {
 
         #[rpc(meta, name = "getProgramAccounts")]
         fn get_program_accounts_full(
+            &self,
+            meta: Self::Metadata,
+            program_id_str: String,
+            config: Option<RpcProgramAccountsConfig>
+        ) -> BoxFuture<Result<OptionalContext<Vec<RpcKeyedAccount>>>>;
+
+        #[rpc(meta, name = "getNonCachedProgramAccounts")]
+        fn get_non_cached_program_accounts_full(
             &self,
             meta: Self::Metadata,
             program_id_str: String,
@@ -159,6 +168,12 @@ pub mod rpc_accounts {
             signature_str: String,
             config: Option<RpcEncodingConfigWrapper<RpcTransactionConfig>>,
         ) -> BoxFuture<Result<Option<EncodedConfirmedTransactionWithStatusMeta>>>;
+
+        #[rpc(meta, name = "getBalance")]
+        fn get_balance(
+            &self,
+            meta: Self::Metadata,
+            program_id_str: String) -> BoxFuture<Result<solana_client::rpc_response::Response<u64>>>;
 
     }
 
@@ -275,6 +290,31 @@ pub mod rpc_accounts {
             */
         }
         
+        fn get_non_cached_program_accounts_full(
+            &self,
+            meta: Self::Metadata,
+            program_id_str: String,
+            config: Option<RpcProgramAccountsConfig>
+        ) -> BoxFuture<Result<OptionalContext<Vec<RpcKeyedAccount>>>> {
+
+            info!(
+                "get_program_accounts program_id_str: {:?}",
+                program_id_str
+            );
+
+            let result = verify_pubkey(&program_id_str);
+            if let Err(err) = result {
+                return Box::pin(future::err(err));
+            }
+            let program_id = result.unwrap();
+
+            Box::pin(async move {
+                meta.get_non_cached_program_accounts(&program_id, config, None)
+                    .await
+            })
+
+        }
+
         fn get_token_supply(&self,
             meta:Self::Metadata,
             token_id_str:String,
@@ -364,6 +404,13 @@ pub mod rpc_accounts {
             let signature = Signature::from_str(&signature_str.as_str());
 
             Box::pin(async move { meta.get_transaction(signature.unwrap(), config).await })
+        }
+
+        fn get_balance(
+            &self,
+            meta: Self::Metadata,
+            addr: String,) -> BoxFuture<Result<Response<u64>>> {
+                Box::pin(async move { meta.get_balance(&Pubkey::from_str(addr.as_str()).unwrap()).await })
         }
 
     }

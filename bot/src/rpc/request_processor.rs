@@ -608,6 +608,64 @@ impl JsonRpcRequestProcessor {
 
     }
 
+    pub async fn get_non_cached_program_accounts(
+        &self,
+        program_id: &Pubkey,
+        config: Option<RpcProgramAccountsConfig>,
+        force_refresh: Option<bool>
+    ) -> Result<OptionalContext<Vec<RpcKeyedAccount>>> {
+
+        let mut c = config.unwrap_or_default();
+        let commitment = c.account_config.commitment.unwrap_or(CommitmentConfig::confirmed());
+        c.account_config.commitment = Some(commitment);
+        let ac = c.clone().account_config;
+
+        let mut ar_keyed_acc: Vec<RpcKeyedAccount> = vec![];
+
+        info!("[RPC] get_program_accounts request received: {}", program_id.to_string());
+
+        let res = self.sol_client.get_program_accounts_with_config(program_id, c.clone()).await;       
+
+        if res.is_err() {
+            return Err(jsonrpc_core::error::Error::invalid_params(res.err().unwrap().to_string()));
+        }
+
+        let ar_results = res.unwrap();
+        let mut ar_pkey: Vec<Pubkey> = vec![];
+
+        for f in ar_results.iter() {
+
+            let res_simple_account = self.sol_client.get_account(&f.0.clone()).await.unwrap();
+
+            ar_pkey.push(f.0.clone());
+            self.sol_state.add_account_info(f.0.clone(), ProchainAccountInfo {
+                data: res_simple_account.data.clone(),
+                executable: res_simple_account.executable,
+                lamports: res_simple_account.lamports,
+                owner: Pubkey::try_from(res_simple_account.owner.to_bytes().to_vec()).unwrap(),
+                pubkey: f.0.clone(),
+                rent_epoch: res_simple_account.rent_epoch,
+                slot: 0,
+                txn_signature: None,
+                write_version: 0,
+                last_update: chrono::offset::Utc::now()
+            });
+            let ui_account = UiAccount::encode(&f.0, &res_simple_account.clone(), c.clone().account_config.encoding.unwrap(), None, c.clone().account_config.data_slice);
+            let aa = RpcKeyedAccount {
+                pubkey: f.0.to_string(),
+                account: ui_account,
+            };
+            ar_keyed_acc.push(aa);
+
+        }
+
+        Ok(ar_keyed_acc).map(|result| match c.clone().with_context.unwrap_or_default() {
+            true => OptionalContext::Context(new_response(0, result)),
+            false => OptionalContext::NoContext(result),
+        })
+
+    }
+
     pub async fn get_program_accounts(
         &self,
         program_id: &Pubkey,
@@ -1284,6 +1342,18 @@ impl JsonRpcRequestProcessor {
         
         return Ok(Some(self.sol_client.get_transaction_with_config(&signature, config).await.unwrap()));
 
+    }
+
+    pub async fn get_balance(&self, pubkey: &Pubkey) -> Result<Response<u64>> {
+        let res = self.sol_client
+        .get_balance_with_commitment(pubkey, CommitmentConfig::confirmed())
+        .await;
+
+        if res.is_ok() {
+            return Ok(new_response(self.sol_state.get_slot() as i64, res.unwrap().value));
+        }
+
+        return Ok(new_response(self.sol_state.get_slot() as i64, 0));
     }
 
     // pub async fn send_transaction(

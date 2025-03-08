@@ -57,7 +57,7 @@ async fn get_solana_reset_cached_acount_info() -> impl Responder {
 
     crate::bot::bot_start::init_start().await;
     
-    crate::oracles::create_token_list_oracle::create_token_list(arc_state.clone(), arc_state.get_sol_client().clone()).await;
+    //crate::oracles::create_token_list_oracle::create_token_list(arc_state.clone(), arc_state.get_sol_client().clone()).await;
     crate::oracles::create_subscription_oracle::init_sub(arc_state.clone(), arc_state.get_sol_client().clone(), String::from("sage")).await;
 
     crate::oracles::create_subscription_oracle::refresh();

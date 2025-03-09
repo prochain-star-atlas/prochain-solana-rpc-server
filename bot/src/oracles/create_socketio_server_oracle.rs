@@ -115,6 +115,13 @@ pub fn remove_mutex_fleet_sub(sub_name: String) {
 
 }
 
+pub fn remove_all_fleet_sub() {
+    let av = get_all_values_sub();
+    for it in av {
+        remove_mutex_fleet_sub(it.id_sub);
+    }
+}
+
 pub fn get_all_values_sub() -> Vec<FleetSubscription> {
     let map: Vec<FleetSubscription> = LIST_FLEET_SUBSCRIPTION.lock().iter().map(|ref_multi| ref_multi.value().clone()).collect();
     return map;
@@ -940,20 +947,25 @@ pub async fn run(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_clie
                 let user_id_key: String = ufi.userId.replace("-", "").chars().skip(0).take(10).collect();
                 let key = s_id_key + "-" + user_id_key.as_str() + "-" + &ufi.publicKey;
 
-                log::info!("[SOCKETIO] subscribeToFleetChange for id: {:?}", key);
+                let vec_current_sub = get_all_values_sub();
 
-                tokio::spawn(async move {
+                if !vec_current_sub.iter().any(|f| { f.id_sub == key }) {
 
-                    let fleet_subscription = create_subscription_for_fleet(key.clone(), request_processor_local.clone(), ufi.clone()).await;
-                    if fleet_subscription.is_ok() {
-                        set_mutex_fleet_sub(key.clone(), fleet_subscription.unwrap());
-                        let _res = run_subscription_fleet(state.clone(), key.clone(), request_processor_local.clone(), ufi.clone(), s).await;
-                    } else {
-                        log::error!("Error creating the fleet subscription {:?}", ufi.clone().publicKey);
-                    }
+                    log::info!("[SOCKETIO] subscribeToFleetChange for id: {:?}", key);
 
-                });  
+                    tokio::spawn(async move {
+    
+                        let fleet_subscription = create_subscription_for_fleet(key.clone(), request_processor_local.clone(), ufi.clone()).await;
+                        if fleet_subscription.is_ok() {
+                            set_mutex_fleet_sub(key.clone(), fleet_subscription.unwrap());
+                            let _res = run_subscription_fleet(state.clone(), key.clone(), request_processor_local.clone(), ufi.clone(), s).await;
+                        } else {
+                            log::error!("Error creating the fleet subscription {:?}", ufi.clone().publicKey);
+                        }
+    
+                    });  
 
+                }
                 
             },
         );

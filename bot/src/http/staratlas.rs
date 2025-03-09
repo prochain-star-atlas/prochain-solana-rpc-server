@@ -15,7 +15,8 @@ use crate::{model::model::GrpcYellowstoneSubscription, oracles::create_socketio_
     paths(
         get_staratlas_fleet_subscription_all,
         get_staratlas_fleet_subscription_by_user_id,
-        remove_staratlas_fleet_subscription_by_id
+        remove_staratlas_fleet_subscription_by_id,
+        remove_staratlas_fleet_sub_all
     ),
     components(schemas(FleetSubscription))
 )]
@@ -26,7 +27,8 @@ pub(super) fn configure() -> impl FnOnce(&mut ServiceConfig) {
         config
             .service(get_staratlas_fleet_subscription_all)
             .service(get_staratlas_fleet_subscription_by_user_id)
-            .service(remove_staratlas_fleet_subscription_by_id);
+            .service(remove_staratlas_fleet_subscription_by_id)
+            .service(remove_staratlas_fleet_sub_all);
     }
 }
 
@@ -67,6 +69,20 @@ async fn get_staratlas_fleet_subscription_by_user_id(user_id: Path<String>) -> i
 async fn remove_staratlas_fleet_subscription_by_id(sub_name: Path<String>) -> impl Responder {
 
     let _1 = crate::oracles::create_socketio_server_oracle::remove_mutex_fleet_sub(sub_name.to_string());
+
+    HttpResponse::Ok().json(true)
+
+}
+
+#[utoipa::path(
+    responses(
+        (status = 200, description = "remove staratlas fleet subscription", body = [bool])
+    )
+)]
+#[put("/staratlas/fleet/subscription/removeall")]
+async fn remove_staratlas_fleet_sub_all() -> impl Responder {
+
+    let _1 = crate::oracles::create_socketio_server_oracle::remove_all_fleet_sub();
 
     HttpResponse::Ok().json(true)
 

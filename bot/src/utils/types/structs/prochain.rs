@@ -7,7 +7,7 @@ pub struct RouteSnapshotDto {
     pub routes: Vec<String>
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct UserFleetCargoItem {
 
     pub publicKey: String,

@@ -8,7 +8,7 @@ use serde_json::json;
 use solana_client::{rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig, RpcTokenAccountsFilter}, rpc_request::RpcRequest, rpc_response::{RpcKeyedAccount, RpcResult}};
 use solana_sdk::{commitment_config::{CommitmentConfig, CommitmentLevel}, pubkey::Pubkey};
 use utoipa::OpenApi;
-use crate::{model::model::GrpcYellowstoneSubscription, oracles::{create_rpc_server_oracle::MAX_MULTIPLE_ACCOUNTS, create_socketio_server_oracle::{refresh_fleet, FleetSubscription}}, rpc::{request_processor::JsonRpcRequestProcessor, rpc_service::JsonRpcConfig}, solana_state::{ProchainAccountInfo, ProchainAccountInfoSchema}, utils::types::structs::prochain::{UserFleetInstanceRequest, UserFleetInstanceResponse}};
+use crate::{model::model::GrpcYellowstoneSubscription, oracles::{create_rpc_server_oracle::MAX_MULTIPLE_ACCOUNTS, create_socketio_server_oracle::{refresh_fleet, FleetSubscription}}, rpc::{request_processor::JsonRpcRequestProcessor, rpc_service::JsonRpcConfig}, solana_state::{ProchainAccountInfo, ProchainAccountInfoSchema}, utils::types::structs::prochain::{UserFleetInstanceRequest, UserFleetInstanceResponse, UserFleetCargoItem}};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -19,7 +19,7 @@ use crate::{model::model::GrpcYellowstoneSubscription, oracles::{create_rpc_serv
         remove_staratlas_fleet_sub_all,
         post_refresh_fleet_accounts
     ),
-    components(schemas(FleetSubscription, UserFleetInstanceRequest , UserFleetInstanceResponse))
+    components(schemas(FleetSubscription, UserFleetInstanceRequest , UserFleetInstanceResponse, UserFleetCargoItem))
 )]
 pub(super) struct StarAtlasApi;
 

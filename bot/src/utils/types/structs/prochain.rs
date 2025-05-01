@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use solana_sdk::pubkey::Pubkey;
+use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RouteSnapshotDto {
@@ -15,7 +16,7 @@ pub struct UserFleetCargoItem {
 
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct UserFleetInstanceRequest {
 
     pub userId: String,
@@ -34,7 +35,7 @@ pub struct UserFleetInstanceRequest {
     
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct UserFleetInstanceResponse {
 
     pub userId: String,

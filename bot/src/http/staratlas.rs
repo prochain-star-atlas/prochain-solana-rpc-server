@@ -2,13 +2,13 @@
 use std::time::Duration;
 
 use actix_web::{
-    get, put, web::{Path, ServiceConfig}, HttpResponse, Responder
+    get, post, put, web::{Json, Path, ServiceConfig}, HttpResponse, Responder
 };
 use serde_json::json;
 use solana_client::{rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig, RpcTokenAccountsFilter}, rpc_request::RpcRequest, rpc_response::{RpcKeyedAccount, RpcResult}};
 use solana_sdk::{commitment_config::{CommitmentConfig, CommitmentLevel}, pubkey::Pubkey};
 use utoipa::OpenApi;
-use crate::{model::model::GrpcYellowstoneSubscription, oracles::create_socketio_server_oracle::FleetSubscription, solana_state::{ProchainAccountInfo, ProchainAccountInfoSchema}};
+use crate::{model::model::GrpcYellowstoneSubscription, oracles::{create_rpc_server_oracle::MAX_MULTIPLE_ACCOUNTS, create_socketio_server_oracle::{refresh_fleet, FleetSubscription}}, rpc::{request_processor::JsonRpcRequestProcessor, rpc_service::JsonRpcConfig}, solana_state::{ProchainAccountInfo, ProchainAccountInfoSchema}, utils::types::structs::prochain::{UserFleetInstanceRequest, UserFleetInstanceResponse}};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -16,9 +16,10 @@ use crate::{model::model::GrpcYellowstoneSubscription, oracles::create_socketio_
         get_staratlas_fleet_subscription_all,
         get_staratlas_fleet_subscription_by_user_id,
         remove_staratlas_fleet_subscription_by_id,
-        remove_staratlas_fleet_sub_all
+        remove_staratlas_fleet_sub_all,
+        post_refresh_fleet_accounts
     ),
-    components(schemas(FleetSubscription))
+    components(schemas(FleetSubscription, UserFleetInstanceRequest , UserFleetInstanceResponse))
 )]
 pub(super) struct StarAtlasApi;
 
@@ -28,7 +29,8 @@ pub(super) fn configure() -> impl FnOnce(&mut ServiceConfig) {
             .service(get_staratlas_fleet_subscription_all)
             .service(get_staratlas_fleet_subscription_by_user_id)
             .service(remove_staratlas_fleet_subscription_by_id)
-            .service(remove_staratlas_fleet_sub_all);
+            .service(remove_staratlas_fleet_sub_all)
+            .service(post_refresh_fleet_accounts);
     }
 }
 
@@ -85,5 +87,34 @@ async fn remove_staratlas_fleet_sub_all() -> impl Responder {
     let _1 = crate::oracles::create_socketio_server_oracle::remove_all_fleet_sub();
 
     HttpResponse::Ok().json(true)
+
+}
+
+#[utoipa::path(
+    responses(
+        (status = 200, description = "post refresh fleet accounts", body = [UserFleetInstanceResponse])
+    )
+)]
+#[post("/staratlas/fleet/instance/refresh")]
+async fn post_refresh_fleet_accounts(ufi: Json<UserFleetInstanceRequest>) -> impl Responder {
+
+    let default_rpc_max_multiple_accounts = MAX_MULTIPLE_ACCOUNTS;
+    let config: JsonRpcConfig = JsonRpcConfig {
+        max_multiple_accounts: Some(default_rpc_max_multiple_accounts),
+        rpc_threads: 8,
+        rpc_niceness_adj: 0,
+    };
+
+    let arc_state = crate::solana_state::get_solana_state();
+
+    let request_processor = JsonRpcRequestProcessor::new(config, arc_state.get_sol_client().clone(), arc_state.clone());
+
+    let fleet_refreshed = refresh_fleet(request_processor.clone(), ufi.clone()).await;
+    if fleet_refreshed.is_ok() {
+        return HttpResponse::Ok().json(fleet_refreshed.unwrap())
+    } else {
+        log::error!("force_fleet_refreshed {:?}", ufi.clone().publicKey);
+        return HttpResponse::BadRequest().into()
+    }
 
 }

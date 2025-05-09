@@ -927,108 +927,114 @@ pub async fn refresh_fleet(json_rpc_processor: JsonRpcRequestProcessor, ufi: Use
 #[tokio::main]
 pub async fn run(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) -> Result<(), Box<dyn std::error::Error>> {
 
-    log::info!("Starting sockerio server on 0.0.0.0:14655");
+    let state_local = state.clone();
 
-    let request_processor = JsonRpcRequestProcessor::new(config, sol_client, state.clone());
-    let (layer, io) = SocketIo::builder().with_state(UserCnt::new()).build_layer();
+    loop {
 
-    io.ns("/", move |s: SocketRef| {
+        let state_loop = state_local.clone();
 
-        let request_processor_local = request_processor.clone();
+        log::info!("Starting sockerio server on 0.0.0.0:14655");
 
-        s.on(
-            "subscribeToFleetChange",
-            |s: SocketRef, Data::<String>(msg), user_cnt: State<UserCnt>| async move {
-
-                user_cnt.add_user(s.id.to_string());
-                let ufi: UserFleetInstanceRequest = serde_json::from_str(&msg).unwrap();
-
-                let s_id_key: String = s.id.to_string().replace("-", "").chars().skip(0).take(10).collect();
-                let user_id_key: String = ufi.userId.replace("-", "").chars().skip(0).take(10).collect();
-                let key = s_id_key + "-" + user_id_key.as_str() + "-" + &ufi.publicKey;
-
-                let vec_current_sub = get_all_values_sub();
-
-                if !vec_current_sub.iter().any(|f| { f.id_sub == key }) {
-
-                    log::info!("[SOCKETIO] subscribeToFleetChange for id: {:?}", key);
-
+        let request_processor = JsonRpcRequestProcessor::new(config.clone(), sol_client.clone(), state_loop.clone());
+        let (layer, io) = SocketIo::builder().with_state(UserCnt::new()).build_layer();
+    
+        io.ns("/", move |s: SocketRef| {
+    
+            let request_processor_local = request_processor.clone();
+    
+            s.on(
+                "subscribeToFleetChange",
+                |s: SocketRef, Data::<String>(msg), user_cnt: State<UserCnt>| async move {
+    
+                    user_cnt.add_user(s.id.to_string());
+                    let ufi: UserFleetInstanceRequest = serde_json::from_str(&msg).unwrap();
+    
+                    let s_id_key: String = s.id.to_string().replace("-", "").chars().skip(0).take(10).collect();
+                    let user_id_key: String = ufi.userId.replace("-", "").chars().skip(0).take(10).collect();
+                    let key = s_id_key + "-" + user_id_key.as_str() + "-" + &ufi.publicKey;
+    
+                    let vec_current_sub = get_all_values_sub();
+    
+                    if !vec_current_sub.iter().any(|f| { f.id_sub == key }) {
+    
+                        log::info!("[SOCKETIO] subscribeToFleetChange for id: {:?}", key);
+    
+                        tokio::spawn(async move {
+        
+                            let fleet_subscription = create_subscription_for_fleet(key.clone(), request_processor_local.clone(), ufi.clone()).await;
+                            if fleet_subscription.is_ok() {
+                                set_mutex_fleet_sub(key.clone(), fleet_subscription.unwrap());
+                                let _res = run_subscription_fleet(state_loop.clone(), key.clone(), request_processor_local.clone(), ufi.clone(), s).await;
+                            } else {
+                                log::error!("Error creating the fleet subscription {:?}", ufi.clone().publicKey);
+                            }
+        
+                        });  
+    
+                    }
+                    
+                },
+            );
+    
+            let request_processor_local_1 = request_processor.clone();
+    
+            s.on(
+                "forceRefreshFleet",
+                |s: SocketRef, Data::<String>(msg), ack: AckSender| async move {
+    
+                    let ufi: UserFleetInstanceRequest = serde_json::from_str(&msg).unwrap();
+                    log::info!("[SOCKETIO] force_fleet_refreshed for pubkey: {:?}", ufi.publicKey);
+    
                     tokio::spawn(async move {
     
-                        let fleet_subscription = create_subscription_for_fleet(key.clone(), request_processor_local.clone(), ufi.clone()).await;
-                        if fleet_subscription.is_ok() {
-                            set_mutex_fleet_sub(key.clone(), fleet_subscription.unwrap());
-                            let _res = run_subscription_fleet(state.clone(), key.clone(), request_processor_local.clone(), ufi.clone(), s).await;
+                        let fleet_refreshed = refresh_fleet(request_processor_local_1.clone(), ufi.clone()).await;
+                        if fleet_refreshed.is_ok() {
+    
+                            let fleet_refreshed_json = serde_json::to_string(&fleet_refreshed.unwrap());
+                            if fleet_refreshed_json.is_ok() {
+                                log::info!("force_fleet_refreshed updated {:?}", ufi.clone().publicKey);
+                                ack.send(&fleet_refreshed_json.unwrap()).ok()
+                            } else {
+                                log::error!("force_fleet_refreshed error {:?}", fleet_refreshed_json.err());
+                                None
+                            }
+    
                         } else {
-                            log::error!("Error creating the fleet subscription {:?}", ufi.clone().publicKey);
+                            log::error!("force_fleet_refreshed {:?}", ufi.clone().publicKey);
+                            None
                         }
     
                     });  
-
-                }
-                
-            },
-        );
-
-        let request_processor_local_1 = request_processor.clone();
-
-        s.on(
-            "forceRefreshFleet",
-            |s: SocketRef, Data::<String>(msg), ack: AckSender| async move {
-
-                let ufi: UserFleetInstanceRequest = serde_json::from_str(&msg).unwrap();
-                log::info!("[SOCKETIO] force_fleet_refreshed for pubkey: {:?}", ufi.publicKey);
-
-                tokio::spawn(async move {
-
-                    let fleet_refreshed = refresh_fleet(request_processor_local_1.clone(), ufi.clone()).await;
-                    if fleet_refreshed.is_ok() {
-
-                        let fleet_refreshed_json = serde_json::to_string(&fleet_refreshed.unwrap());
-                        if fleet_refreshed_json.is_ok() {
-                            log::info!("force_fleet_refreshed updated {:?}", ufi.clone().publicKey);
-                            ack.send(&fleet_refreshed_json.unwrap()).ok()
-                        } else {
-                            log::error!("force_fleet_refreshed error {:?}", fleet_refreshed_json.err());
-                            None
-                        }
-
-                    } else {
-                        log::error!("force_fleet_refreshed {:?}", ufi.clone().publicKey);
-                        None
-                    }
-
-                });  
-                
-            },
-        );
-
-        s.on_disconnect(
-            |s: SocketRef, user_cnt: State<UserCnt>| async move {
-
-                user_cnt.remove_user(s.id.to_string());
-
-                let s_id_key: String = s.id.to_string().replace("-", "").chars().skip(0).take(10).collect();
-                remove_mutex_fleet_sub_sid(s_id_key);
-
-                log::info!("[SOCKETIO] on_disconnect for id: {:?}", s.id.to_string());
-
-            },
-        );
-
-    });
-
-    let app = axum::Router::new()
-        .fallback_service(ServeDir::new("dist"))
-        .layer(
-            ServiceBuilder::new()
-                .layer(CorsLayer::permissive()) // Enable CORS policy
-                .layer(layer),
-        );
-
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:14655").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
-
-    Ok(())
+                    
+                },
+            );
+    
+            s.on_disconnect(
+                |s: SocketRef, user_cnt: State<UserCnt>| async move {
+    
+                    user_cnt.remove_user(s.id.to_string());
+    
+                    let s_id_key: String = s.id.to_string().replace("-", "").chars().skip(0).take(10).collect();
+                    remove_mutex_fleet_sub_sid(s_id_key);
+    
+                    log::info!("[SOCKETIO] on_disconnect for id: {:?}", s.id.to_string());
+    
+                },
+            );
+    
+        });
+    
+        let app = axum::Router::new()
+            .fallback_service(ServeDir::new("dist"))
+            .layer(
+                ServiceBuilder::new()
+                    .layer(CorsLayer::permissive()) // Enable CORS policy
+                    .layer(layer),
+            );
+    
+        let listener = tokio::net::TcpListener::bind("0.0.0.0:14655").await.unwrap();
+            
+        axum::serve(listener, app.into_make_service()).await.unwrap();
+    }
 
 }

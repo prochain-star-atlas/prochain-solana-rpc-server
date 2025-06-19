@@ -944,10 +944,9 @@ pub async fn run(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_clie
     
             s.on(
                 "subscribeToFleetChange",
-                |s: SocketRef, Data::<String>(msg), user_cnt: State<UserCnt>| async move {
+                |s: SocketRef, Data::<UserFleetInstanceRequest>(ufi), user_cnt: State<UserCnt>| async move {
     
                     user_cnt.add_user(s.id.to_string());
-                    let ufi: UserFleetInstanceRequest = serde_json::from_str(&msg).unwrap();
     
                     let s_id_key: String = s.id.to_string().replace("-", "").chars().skip(0).take(10).collect();
                     let user_id_key: String = ufi.userId.replace("-", "").chars().skip(0).take(10).collect();
@@ -980,9 +979,8 @@ pub async fn run(config: JsonRpcConfig, state: Arc<SolanaStateManager>, sol_clie
     
             s.on(
                 "forceRefreshFleet",
-                |s: SocketRef, Data::<String>(msg), ack: AckSender| async move {
+                |s: SocketRef, Data::<UserFleetInstanceRequest>(ufi), ack: AckSender| async move {
     
-                    let ufi: UserFleetInstanceRequest = serde_json::from_str(&msg).unwrap();
                     log::info!("[SOCKETIO] force_fleet_refreshed for pubkey: {:?}", ufi.publicKey);
     
                     tokio::spawn(async move {

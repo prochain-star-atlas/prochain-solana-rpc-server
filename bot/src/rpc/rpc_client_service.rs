@@ -277,10 +277,13 @@ impl RpcClientService {
                             };
             
                             self.sol_state.add_account_info(pubkey.clone(), pa.clone());
+
                             let mut vec_acc = crate::services::subscription_account_service::get_mutex_account_sub(String::from("sage"));
-                            vec_acc.push(pubkey.to_string());
-                            crate::services::subscription_account_service::set_mutex_account_sub(String::from("sage"), vec_acc);
-                            let _0 = SubscriptionAccountService::restart().await;
+                            if !vec_acc.contains(&pubkey.to_string()) {
+                                vec_acc.push(pubkey.to_string());
+                                crate::services::subscription_account_service::set_mutex_account_sub(String::from("sage"), vec_acc);
+                                let _0 = SubscriptionAccountService::restart().await;
+                            }
                 
                             return Some(pa.clone());
 
@@ -395,10 +398,14 @@ impl RpcClientService {
                     write_version: 0,
                     last_update: chrono::offset::Utc::now()
                 });
+
                 let mut vec_acc = crate::services::subscription_account_service::get_mutex_account_sub(String::from("sage"));
-                vec_acc.push(pubkey.to_string());
-                crate::services::subscription_account_service::set_mutex_account_sub(String::from("sage"), vec_acc);
-                let _0 = SubscriptionAccountService::restart().await;
+                if !vec_acc.contains(&pubkey.to_string()) {
+                    vec_acc.push(pubkey.to_string());
+                    crate::services::subscription_account_service::set_mutex_account_sub(String::from("sage"), vec_acc);
+                    let _0 = SubscriptionAccountService::restart().await;
+                }
+
                 let acc_nw = res.value.clone().unwrap_or_default();
                 ui_account = RpcClientService::encode_account(&acc_nw, &pubkey, config.clone().encoding.unwrap(), config.clone().data_slice)?;
                 accounts.push(Some(ui_account));
@@ -794,10 +801,12 @@ impl RpcClientService {
 
             //self.sol_state. (program_id.clone(), ar_pkey);
             let mut vec_acc = crate::services::subscription_program_account_service::get_mutex_program_sub(String::from("sage"));
-            vec_acc.push(program_id.to_string());
-            let v: Vec<_> = vec_acc.into_iter().unique().collect();
-            crate::services::subscription_program_account_service::set_mutex_program_sub(String::from("sage"), v);
-            let _0 = SubscriptionProgramAccountService::restart().await;
+            if !vec_acc.contains(&program_id.to_string()) {
+                vec_acc.push(program_id.to_string());
+                let v: Vec<_> = vec_acc.into_iter().unique().collect();
+                crate::services::subscription_program_account_service::set_mutex_program_sub(String::from("sage"), v);
+                let _0 = SubscriptionProgramAccountService::restart().await;
+            }
 
         }
 
@@ -1013,23 +1022,21 @@ impl RpcClientService {
                 
                 crate::services::subscription_program_account_service::set_mutex_program_sub(String::from("sage"), vec_acc);
                 let _0 = SubscriptionProgramAccountService::restart().await;
+
             }
 
-            let mut vec_acc_v = crate::services::subscription_token_account_service::get_mutex_token_sub(String::from("sage"));
-            let len_origin = vec_acc_v.len();
-            vec_acc_v.append(&mut ar_pkey);
-            let vec_acc_v_uniq: Vec<String> = vec_acc_v.into_iter().unique().collect();
-
-            if len_origin != vec_acc_v_uniq.len() {
-                crate::services::subscription_token_account_service::set_mutex_token_sub(String::from("sage"), vec_acc_v_uniq);
+            let mut vec_acc_t = crate::services::subscription_token_account_service::get_mutex_token_sub(String::from("sage"));
+            if !vec_acc_t.contains(&program_id_str.clone()) {
+                vec_acc_t.push(program_id_str.clone());
+                crate::services::subscription_token_account_service::set_mutex_token_sub(String::from("sage"), vec_acc_t);
                 let _0 = SubscriptionTokenAccountService::restart().await;
             }
 
-            let mut vec_acc_o = crate::services::subscription_token_account_service::get_mutex_token_sub(String::from("sage"));
-            if !vec_acc_o.contains(&program_id_str) {
-                vec_acc_o.push(program_id_str);
+            let mut vec_acc_o = crate::services::subscription_token_owner_account_service::get_mutex_token_owner_sub(String::from("sage"));
+            if !vec_acc_o.contains(&program_id_str.clone()) {
+                vec_acc_o.push(program_id_str.clone());
                 crate::services::subscription_token_owner_account_service::set_mutex_token_owner_sub(String::from("sage"), vec_acc_o);
-                let _0 = SubscriptionTokenAccountService::restart().await;
+                let _0 = SubscriptionTokenOwnerAccountService::restart().await;
             }
 
             Ok(ar_results)
@@ -1088,21 +1095,19 @@ impl RpcClientService {
             
             crate::services::subscription_program_account_service::set_mutex_program_sub(String::from("sage"), vec_acc);
             let _0 = SubscriptionProgramAccountService::restart().await;
+
         }
 
-        let mut vec_acc_v = crate::services::subscription_token_account_service::get_mutex_token_sub(String::from("sage"));
-        let len_origin = vec_acc_v.len();
-        vec_acc_v.append(&mut ar_pkey);
-        let vec_acc_v_uniq: Vec<String> = vec_acc_v.into_iter().unique().collect();
-
-        if len_origin != vec_acc_v_uniq.len() {
-            crate::services::subscription_token_account_service::set_mutex_token_sub(String::from("sage"), vec_acc_v_uniq);
+        let mut vec_acc_t = crate::services::subscription_token_account_service::get_mutex_token_sub(String::from("sage"));
+        if !vec_acc_t.contains(&program_id_str.clone()) {
+            vec_acc_t.push(program_id_str.clone());
+            crate::services::subscription_token_account_service::set_mutex_token_sub(String::from("sage"), vec_acc_t);
             let _0 = SubscriptionTokenAccountService::restart().await;
         }
 
-        let mut vec_acc_o = crate::services::subscription_token_account_service::get_mutex_token_sub(String::from("sage"));
-        if !vec_acc_o.contains(&program_id_str) {
-            vec_acc_o.push(program_id_str);
+        let mut vec_acc_o = crate::services::subscription_token_owner_account_service::get_mutex_token_owner_sub(String::from("sage"));
+        if !vec_acc_o.contains(&program_id_str.clone()) {
+            vec_acc_o.push(program_id_str.clone());
             crate::services::subscription_token_owner_account_service::set_mutex_token_owner_sub(String::from("sage"), vec_acc_o);
             let _0 = SubscriptionTokenOwnerAccountService::restart().await;
         }

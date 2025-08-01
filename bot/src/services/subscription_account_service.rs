@@ -137,6 +137,10 @@ impl SubscriptionAccountService {
         let list_add: Vec<String> = get_mutex_account_sub("sage".to_string()).into_iter().map(|f| { f }).collect();
         let mut hs_pk: HashSet<Pubkey> = HashSet::new();
 
+        if list_add.len() < 1 {
+            anyhow::bail!("error in account service no accounts")
+        }
+
         for pk in list_add.clone() {
             hs_pk.insert(Pubkey::from_str(pk.as_str()).unwrap());
         }

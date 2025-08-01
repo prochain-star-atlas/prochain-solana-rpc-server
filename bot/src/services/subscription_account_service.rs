@@ -134,7 +134,12 @@ impl SubscriptionAccountService {
 
     pub async fn start_monitor() -> Result<CancellationToken, anyhow::Error> {
         
-        let arc_state = solana_state::get_solana_state();
+        let list_add: Vec<String> = get_mutex_account_sub("sage".to_string()).into_iter().map(|f| { f }).collect();
+        let mut hs_pk: HashSet<Pubkey> = HashSet::new();
+
+        for pk in list_add.clone() {
+            hs_pk.insert(Pubkey::from_str(pk.as_str()).unwrap());
+        }
 
         let path = env::current_dir().unwrap();
         let _res = load_env_vars(&path);
@@ -144,36 +149,22 @@ impl SubscriptionAccountService {
         // 3 - Initialize account filters
         let mut account_filters: HashMap<String, SubscribeRequestFilterAccounts> = HashMap::new();
 
+        let mut data_count = COUNT_REF.lock();
+        *data_count = data_count.add(1);
+
         account_filters.insert(
-            "pf_sw_acc_fil".to_string(),
+            "sas_".to_string() + data_count.to_string().as_str(),
             SubscribeRequestFilterAccounts {
                 nonempty_txn_signature: None,
-                account: vec![],
+                account: list_add.clone(),
                 owner: vec![],
                 filters: vec![],
             },
         );
 
         // 4 - Initialize transaction filter
-        let transaction_filter = SubscribeRequestFilterTransactions {
-            vote: Some(false),
-            failed: Some(false),
-            account_include: vec![],
-            account_exclude: vec![],
-            account_required: vec![],
-            signature: None,
-        };
 
-        let mut transaction_filters: HashMap<String, SubscribeRequestFilterTransactions> =
-            HashMap::new();
-
-        let mut data_count = COUNT_REF.lock();
-        *data_count = data_count.add(1);
-
-        transaction_filters.insert(
-            "pf_sw_tra_fil_".to_string() + data_count.to_string().as_str(),
-            transaction_filter,
-        );
+        let transaction_filters: HashMap<String, SubscribeRequestFilterTransactions> = HashMap::new();
 
         // 5 - Initialize Yellowstone Geyser gRPC Client
         let yellowstone_grpc = ProchainYellowstoneGrpcGeyserClient::new(
@@ -186,7 +177,7 @@ impl SubscriptionAccountService {
                 filters: HashMap::new(),
                 failed_transactions: None
             },
-            Arc::new(RwLock::new(HashSet::new()))
+            Arc::new(RwLock::new(hs_pk))
         );
 
         let datasource_cancellation_token = CancellationToken::new(); 

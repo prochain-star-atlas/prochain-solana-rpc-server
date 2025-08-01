@@ -55,12 +55,6 @@ pub async fn start() {
 
     init_start().await;
 
-    let _0 = SubscriptionAccountService::restart().await;
-    let _1 = SubscriptionProgramAccountService::restart().await;
-    let _2 = SubscriptionTokenAccountService::restart().await;
-    let _3 = SubscriptionTokenOwnerAccountService::restart().await;
-
-
 	let metrics = Metrics::default();
 	let handle = crate::rpc::rpc_service::run_server(metrics.clone()).await;
 
@@ -73,6 +67,11 @@ pub async fn start() {
     start_web_server::start_httpd();
 
     let _cron = create_cron_scheduler().await;
+
+    let _0 = SubscriptionAccountService::restart().await;
+    let _1 = SubscriptionProgramAccountService::restart().await;
+    let _2 = SubscriptionTokenAccountService::restart().await;
+    let _3 = SubscriptionTokenOwnerAccountService::restart().await;
 
     log::info!("All Oracles Started");
 

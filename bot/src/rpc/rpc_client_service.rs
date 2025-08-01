@@ -1171,7 +1171,7 @@ impl RpcClientService {
             if !vec_acc_v.contains(&pk.clone().to_string()) {
                 vec_acc_v.push(pk.clone().to_string());
                 crate::services::subscription_token_account_service::set_mutex_token_sub(String::from("sage"), vec_acc_v);
-                SubscriptionTokenAccountService::restart();
+                let _0 = SubscriptionTokenAccountService::restart().await;
             }
 
         }

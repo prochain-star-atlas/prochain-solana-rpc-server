@@ -85,6 +85,8 @@ impl SubscriptionTokenAccountService {
 
         }
 
+        SubscriptionDeletionService::check_and_restart_deletion_sub();
+
     }
 
     pub async fn start_monitor() -> Result<CancellationToken, anyhow::Error> {

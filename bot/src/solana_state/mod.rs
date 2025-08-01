@@ -228,7 +228,6 @@ impl SolanaStateManager
             });
         } else {
             self.state_account.insert(pub_key, acc.clone());
-            SubscriptionDeletionService::check_and_restart_deletion_sub();
         }
 
         let owner_key = &acc.clone().owner;

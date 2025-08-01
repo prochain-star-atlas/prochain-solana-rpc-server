@@ -69,6 +69,9 @@ pub async fn start() {
 
     let _cron = create_cron_scheduler().await;
 
+    let _00 = SubscriptionAccountService::init_sub("sage".to_string()).await;
+    let _11 = SubscriptionProgramAccountService::init_sub("sage".to_string()).await;
+
     let _0 = SubscriptionAccountService::restart().await;
     let _1 = SubscriptionProgramAccountService::restart().await;
     let _2 = SubscriptionTokenAccountService::restart().await;

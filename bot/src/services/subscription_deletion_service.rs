@@ -168,7 +168,7 @@ impl SubscriptionDeletionService {
             }
         });
 
-        log::info!("Start subscription for subscription_token_owner_account_service ...");
+        log::info!("Start subscription for subscription_deletion_service ...");
 
         return Ok(datasource_cancellation_token.clone());
 

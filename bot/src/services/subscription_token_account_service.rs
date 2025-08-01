@@ -158,7 +158,7 @@ impl SubscriptionTokenAccountService {
             }
         });
 
-        log::info!("Start subscription for Pumpfun Amm ...");
+        log::info!("Start subscription for subscription_token_account_service ...");
 
         return Ok(datasource_cancellation_token.clone());
 
@@ -203,22 +203,8 @@ impl Processor for GenericAccountProcessor {
         _metrics: Arc<MetricsCollection>,
     ) -> CarbonResult<()> {
 
-        let do_steps = async || -> Result<(), anyhow::Error> {
-
-            let arc_state = solana_state::get_solana_state();
-            if account.lamports == 0 {
-                arc_state.clean_zero_account(metadata.pubkey.clone());
-            } else {
-                arc_state.handle_account_update(metadata.pubkey.clone(), account);
-            }
-
-            Ok(())
-
-        };
-        
-        if let Err(err) = do_steps().await {
-            log::error!("error in process: {}", err);
-        }
+        let arc_state = solana_state::get_solana_state();
+        arc_state.handle_account_update(metadata.pubkey.clone(), account);
 
         Ok(())
     }
@@ -235,18 +221,8 @@ impl Processor for GenericAccountDeletionProcessor {
         _metrics: Arc<MetricsCollection>,
     ) -> CarbonResult<()> {
 
-        let do_steps = async || -> Result<(), anyhow::Error> {
-
-            let arc_state = solana_state::get_solana_state();
-            arc_state.clean_zero_account(account.pubkey);
-
-            Ok(())
-
-        };
-        
-        if let Err(err) = do_steps().await {
-            log::error!("error in process: {}", err);
-        }
+        let arc_state = solana_state::get_solana_state();
+        arc_state.clean_zero_account(account.pubkey);
 
         Ok(())
     }

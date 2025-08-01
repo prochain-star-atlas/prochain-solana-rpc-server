@@ -10,7 +10,7 @@ use std::str::FromStr;
 use std::{env, time::Duration};
 use std::sync::Arc;
 use dashmap::DashMap;
-use crate::oracles::create_socketio_server_oracle::{get_subs_from_accounts, refresh_fleet};
+use crate::oracles::create_socketio_server_oracle::{get_all_values_sub, get_subs_from_accounts, refresh_fleet};
 use crate::services::subscription_deletion_service::SubscriptionDeletionService;
 use crate::utils::helpers::load_env_vars;
 use crate::utils::prochain_datasource::ProchainYellowstoneGrpcGeyserClient;
@@ -43,26 +43,6 @@ static JOINHANDLE_REF: Arc<Mutex<Option<CancellationToken>>> = Arc::new(Mutex::f
 #[dynamic] 
 static COUNT_REF: Arc<Mutex<u32>> = Arc::new(Mutex::from(0));
 
-#[dynamic] 
-static LIST_FLEET_OWNER_SUBSCRIPTION: Mutex<DashMap<String, Vec<String>>> = Mutex::new(DashMap::new());
-
-pub fn set_mutex_fleet_owner_sub(sub_name: String, lst_vec: Vec<String>) {
-    LIST_FLEET_OWNER_SUBSCRIPTION.lock().insert(sub_name, lst_vec);
-}
-
-pub fn get_mutex_fleet_owner_sub(sub_name: String) -> Vec<String> {
-    let map = LIST_FLEET_OWNER_SUBSCRIPTION.lock();
-    let val0 = map.get(&sub_name);
-    match val0 {
-        None => { return vec![]; },
-        Some(val) => { val.value().clone() }
-    }
-}
-
-pub fn reset_all_list_sub() {
-    LIST_FLEET_OWNER_SUBSCRIPTION.lock().clear();
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct SubscriptionFleetOwnerService {
 }
@@ -94,7 +74,8 @@ impl SubscriptionFleetOwnerService {
 
     pub async fn start_monitor() -> Result<CancellationToken, anyhow::Error> {
         
-        let list_add: Vec<String> = get_mutex_fleet_owner_sub("sage".to_string()).into_iter().map(|f| { f }).collect();
+        let all_sub = get_all_values_sub();
+        let list_add: Vec<String> = all_sub.into_iter().map(|f| { f.owner_address }).flatten().collect();
 
         if list_add.len() < 1 {
             anyhow::bail!("error in account service no accounts")
@@ -115,8 +96,8 @@ impl SubscriptionFleetOwnerService {
             "sas_".to_string() + data_count.to_string().as_str(),
             SubscribeRequestFilterAccounts {
                 nonempty_txn_signature: None,
-                account: list_add.clone(),
-                owner: vec![],
+                account: vec![],
+                owner: list_add.clone(),
                 filters: vec![],
             },
         );

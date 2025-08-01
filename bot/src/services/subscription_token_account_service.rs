@@ -206,6 +206,9 @@ impl Processor for GenericAccountProcessor {
     ) -> CarbonResult<()> {
 
         let arc_state = solana_state::get_solana_state();
+
+        arc_state.set_slot(metadata.slot);
+        
         arc_state.handle_account_update(metadata.pubkey.clone(), account);
 
         Ok(())

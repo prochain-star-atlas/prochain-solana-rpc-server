@@ -63,7 +63,7 @@ pub async fn start() {
         tokio::spawn(handle.unwrap().stopped());
     }
 
-    create_socketio_server_oracle::start_socketio_httpd(arc_state.clone(), arc_state.get_sol_client().clone());
+    create_socketio_server_oracle::start_socketio_httpd(arc_state.clone());
 
     start_web_server::start_httpd();
 

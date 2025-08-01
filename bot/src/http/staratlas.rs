@@ -8,7 +8,7 @@ use serde_json::json;
 use solana_client::{rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig, RpcTokenAccountsFilter}, rpc_request::RpcRequest, rpc_response::{RpcKeyedAccount, RpcResult}};
 use solana_sdk::{commitment_config::{CommitmentConfig, CommitmentLevel}, pubkey::Pubkey};
 use utoipa::OpenApi;
-use crate::{model::model::GrpcYellowstoneSubscription, oracles::{create_socketio_server_oracle::{refresh_fleet, FleetSubscription}}, solana_state::{ProchainAccountInfo, ProchainAccountInfoSchema}, utils::types::structs::prochain::{UserFleetInstanceRequest, UserFleetInstanceResponse, UserFleetCargoItem}};
+use crate::{model::model::GrpcYellowstoneSubscription, oracles::create_socketio_server_oracle::{refresh_fleet, FleetSubscription, FleetSubscriptionSummary}, solana_state::{ProchainAccountInfo, ProchainAccountInfoSchema}, utils::types::structs::prochain::{UserFleetCargoItem, UserFleetInstanceRequest, UserFleetInstanceResponse}};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -19,7 +19,7 @@ use crate::{model::model::GrpcYellowstoneSubscription, oracles::{create_socketio
         remove_staratlas_fleet_sub_all,
         post_refresh_fleet_accounts
     ),
-    components(schemas(FleetSubscription, UserFleetInstanceRequest , UserFleetInstanceResponse, UserFleetCargoItem))
+    components(schemas(FleetSubscriptionSummary, UserFleetInstanceRequest , UserFleetInstanceResponse, UserFleetCargoItem))
 )]
 pub(super) struct StarAtlasApi;
 
@@ -36,29 +36,31 @@ pub(super) fn configure() -> impl FnOnce(&mut ServiceConfig) {
 
 #[utoipa::path(
     responses(
-        (status = 200, description = "get staratlas fleet subscriptions", body = [Vec<FleetSubscription>])
+        (status = 200, description = "get staratlas fleet subscriptions", body = [Vec<FleetSubscriptionSummary>])
     )
 )]
 #[get("/staratlas/fleet/subscription/all")]
 async fn get_staratlas_fleet_subscription_all() -> impl Responder {
 
     let lst_fleet_sub = crate::oracles::create_socketio_server_oracle::get_all_values_sub();
+    let vec: Vec<FleetSubscriptionSummary> = lst_fleet_sub.into_iter().map(|f| { FleetSubscriptionSummary { id_sub: f.id_sub, account_address: f.account_address, owner_address: f.owner_address }  }).collect();
 
-    HttpResponse::Ok().json(lst_fleet_sub)
+    HttpResponse::Ok().json(vec)
 
 }
 
 #[utoipa::path(
     responses(
-        (status = 200, description = "get staratlas fleet subscriptions by user id", body = [Vec<FleetSubscription>])
+        (status = 200, description = "get staratlas fleet subscriptions by user id", body = [Vec<FleetSubscriptionSummary>])
     )
 )]
 #[get("/staratlas/fleet/subscription/byuserid/{user_id}")]
 async fn get_staratlas_fleet_subscription_by_user_id(user_id: Path<String>) -> impl Responder {
 
     let lst_fleet_sub = crate::oracles::create_socketio_server_oracle::get_all_values_sub_by_user_id(user_id.to_string());
+    let vec: Vec<FleetSubscriptionSummary> = lst_fleet_sub.into_iter().map(|f| { FleetSubscriptionSummary { id_sub: f.id_sub, account_address: f.account_address, owner_address: f.owner_address }  }).collect();
 
-    HttpResponse::Ok().json(lst_fleet_sub)
+    HttpResponse::Ok().json(vec)
 
 }
 

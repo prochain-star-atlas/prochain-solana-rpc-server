@@ -8,7 +8,7 @@ use serde_json::json;
 use solana_client::{rpc_client::RpcClient, rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig, RpcTokenAccountsFilter}, rpc_request::RpcRequest, rpc_response::{RpcKeyedAccount, RpcResult}};
 use solana_sdk::{commitment_config::{CommitmentConfig, CommitmentLevel}, pubkey::Pubkey};
 use utoipa::OpenApi;
-use crate::{model::model::GrpcYellowstoneSubscription, oracles::create_socketio_server_oracle::FleetSubscription, services::{subscription_account_service::SubscriptionAccountService, subscription_program_account_service::SubscriptionProgramAccountService, subscription_token_account_service::SubscriptionTokenAccountService, subscription_token_owner_account_service::SubscriptionTokenOwnerAccountService}, solana_state::{ProchainAccountInfo, ProchainAccountInfoSchema}};
+use crate::{model::model::GrpcYellowstoneSubscription, oracles::create_socketio_server_oracle::{FleetSubscription, FleetSubscriptionSummary}, services::{subscription_account_service::SubscriptionAccountService, subscription_program_account_service::SubscriptionProgramAccountService, subscription_token_account_service::SubscriptionTokenAccountService, subscription_token_owner_account_service::SubscriptionTokenOwnerAccountService}, solana_state::{ProchainAccountInfo, ProchainAccountInfoSchema}};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -23,7 +23,7 @@ use crate::{model::model::GrpcYellowstoneSubscription, oracles::create_socketio_
         get_solana_cached_subscription_token_account,
         get_solana_subscription_settings
     ),
-    components(schemas(ProchainAccountInfoSchema, GrpcYellowstoneSubscription, FleetSubscription))
+    components(schemas(ProchainAccountInfoSchema, GrpcYellowstoneSubscription, FleetSubscriptionSummary))
 )]
 pub(super) struct SolanaApi;
 

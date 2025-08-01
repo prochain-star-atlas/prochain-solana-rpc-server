@@ -10,6 +10,7 @@ use std::str::FromStr;
 use std::{env, time::Duration};
 use std::sync::Arc;
 use dashmap::DashMap;
+use crate::services::subscription_deletion_service::SubscriptionDeletionService;
 use crate::utils::helpers::load_env_vars;
 use crate::utils::prochain_datasource::ProchainYellowstoneGrpcGeyserClient;
 

@@ -147,7 +147,6 @@ impl SubscriptionTokenOwnerAccountService {
             .datasource_with_id(yellowstone_grpc, datasource_id.clone())
             .datasource_cancellation_token(datasource_cancellation_token.clone())
             .account(GenericAccountDecoder, GenericAccountProcessor)
-            .account_deletions(GenericAccountDeletionProcessor)
             .shutdown_strategy(carbon_core::pipeline::ShutdownStrategy::Immediate)
             .build()?;
 
@@ -166,7 +165,7 @@ impl SubscriptionTokenOwnerAccountService {
 }
 
 pub struct GenericAccount {
-    data: Vec<u8>
+    state: bool
 }
 
 pub struct GenericAccountDecoder;
@@ -179,7 +178,7 @@ impl AccountDecoder<'_> for GenericAccountDecoder {
     ) -> Option<carbon_core::account::DecodedAccount<Self::AccountType>> {
         return Some(carbon_core::account::DecodedAccount {
                 lamports: account.lamports,
-                data: GenericAccount { data: account.data.clone() },
+                data: GenericAccount { state: true },
                 owner: account.owner,
                 executable: account.executable,
                 rent_epoch: account.rent_epoch,
@@ -204,24 +203,6 @@ impl Processor for GenericAccountProcessor {
 
         let arc_state = solana_state::get_solana_state();
         arc_state.handle_account_update(metadata.pubkey.clone(), account);
-
-        Ok(())
-    }
-}
-
-pub struct GenericAccountDeletionProcessor;
-#[async_trait]
-impl Processor for GenericAccountDeletionProcessor {
-    type InputType = carbon_core::datasource::AccountDeletion;
-
-    async fn process(
-        &mut self,
-        account: Self::InputType,
-        _metrics: Arc<MetricsCollection>,
-    ) -> CarbonResult<()> {
-
-        let arc_state = solana_state::get_solana_state();
-        arc_state.clean_zero_account(account.pubkey);
 
         Ok(())
     }

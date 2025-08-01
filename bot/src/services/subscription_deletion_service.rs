@@ -41,14 +41,14 @@ static JOINHANDLE_REF: Arc<Mutex<Option<CancellationToken>>> = Arc::new(Mutex::f
 static COUNT_REF: Arc<Mutex<u32>> = Arc::new(Mutex::from(0));
 
 #[dynamic] 
-static LIST_TOKEN_ACCOUNT_SUBSCRIPTION: Mutex<DashMap<String, Vec<String>>> = Mutex::new(DashMap::new());
+static LIST_ACCOUNT_DELETION_SUBSCRIPTION: Mutex<DashMap<String, Vec<String>>> = Mutex::new(DashMap::new());
 
-pub fn set_mutex_token_sub(sub_name: String, lst_vec: Vec<String>) {
-    LIST_TOKEN_ACCOUNT_SUBSCRIPTION.lock().insert(sub_name, lst_vec);
+pub fn set_mutex_deletion_sub(sub_name: String, lst_vec: Vec<String>) {
+    LIST_ACCOUNT_DELETION_SUBSCRIPTION.lock().insert(sub_name, lst_vec);
 }
 
-pub fn get_mutex_token_sub(sub_name: String) -> Vec<String> {
-    let map = LIST_TOKEN_ACCOUNT_SUBSCRIPTION.lock();
+pub fn get_mutex_deletion_sub(sub_name: String) -> Vec<String> {
+    let map = LIST_ACCOUNT_DELETION_SUBSCRIPTION.lock();
     let val0 = map.get(&sub_name);
     match val0 {
         None => { return vec![]; },
@@ -56,19 +56,44 @@ pub fn get_mutex_token_sub(sub_name: String) -> Vec<String> {
     }
 }
 
-pub fn reset_all_list_sub() {
-    LIST_TOKEN_ACCOUNT_SUBSCRIPTION.lock().clear();
+pub async fn refresh_deletion_service() {
+    let state = get_solana_state();
+    let all_pk = state.get_all_account_info_pubkey();
+    let all_pk_strings: Vec<String> = all_pk.into_iter().map(|f| { f.to_string() }).collect();
+    set_mutex_deletion_sub("sage".to_string(), all_pk_strings);
+    let _0 = SubscriptionDeletionService::restart().await;
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct SubscriptionTokenAccountService {
+pub struct SubscriptionDeletionService {
 }
 
-impl SubscriptionTokenAccountService {
+impl SubscriptionDeletionService {
+
+    pub fn check_and_restart_deletion_sub() {
+
+        let current_keys = get_mutex_deletion_sub("sage".to_string());
+        let state = get_solana_state();
+        let all_pk = state.get_all_account_info_pubkey();
+        let all_pk_strings: Vec<String> = all_pk.into_iter().map(|f| { f.to_string() }).collect();
+
+        let item_set: HashSet<_> = current_keys.into_iter().collect();
+        let item_set_other: HashSet<_> = all_pk_strings.into_iter().collect();
+        let difference: Vec<_> = item_set_other.into_iter().filter(|item| !item_set.contains(item)).collect();
+
+        if difference.len() > 0 {
+
+            tokio::spawn(async move {
+                let _0 = refresh_deletion_service().await;
+            });
+
+        }
+
+    }
 
     pub async fn restart() {
 
-        let jh = SubscriptionTokenAccountService::start_monitor().await;
+        let jh = SubscriptionDeletionService::start_monitor().await;
 
         tokio::time::sleep(Duration::from_millis(5000)).await;
 
@@ -89,11 +114,11 @@ impl SubscriptionTokenAccountService {
 
     pub async fn start_monitor() -> Result<CancellationToken, anyhow::Error> {
         
-        let list_add: Vec<String> = get_mutex_token_sub("sage".to_string()).into_iter().map(|f| { f }).collect();
+        let list_add: Vec<String> = get_mutex_deletion_sub("sage".to_string()).into_iter().map(|f| { f }).collect();
         let mut hs_pk: HashSet<Pubkey> = HashSet::new();
 
         if list_add.len() < 1 {
-            anyhow::bail!("error in token account service no accounts")
+            anyhow::bail!("error in token owner service no accounts")
         }
 
         for pk in list_add.clone() {
@@ -106,23 +131,9 @@ impl SubscriptionTokenAccountService {
         let url_solana_geyser = std::env::var("SOL_GEYSER_YELLOWSTONE").unwrap();
 
         // 3 - Initialize account filters
-        let mut account_filters: HashMap<String, SubscribeRequestFilterAccounts> = HashMap::new();
-
-        let mut data_count = COUNT_REF.lock();
-        *data_count = data_count.add(1);
-
-        account_filters.insert(
-            "stas_".to_string() + data_count.to_string().as_str(),
-            SubscribeRequestFilterAccounts {
-                nonempty_txn_signature: None,
-                account: list_add.clone(),
-                owner: vec![],
-                filters: vec![],
-            },
-        );
+        let account_filters: HashMap<String, SubscribeRequestFilterAccounts> = HashMap::new();
 
         // 4 - Initialize transaction filter
-
         let transaction_filters: HashMap<String, SubscribeRequestFilterTransactions> = HashMap::new();
 
         // 5 - Initialize Yellowstone Geyser gRPC Client
@@ -147,7 +158,7 @@ impl SubscriptionTokenAccountService {
         let mut pipeline = carbon_core::pipeline::Pipeline::builder()
             .datasource_with_id(yellowstone_grpc, datasource_id.clone())
             .datasource_cancellation_token(datasource_cancellation_token.clone())
-            .account(GenericAccountDecoder, GenericAccountProcessor)
+            .account_deletions(GenericAccountDeletionProcessor)
             .shutdown_strategy(carbon_core::pipeline::ShutdownStrategy::Immediate)
             .build()?;
 
@@ -157,7 +168,7 @@ impl SubscriptionTokenAccountService {
             }
         });
 
-        log::info!("Start subscription for subscription_token_account_service ...");
+        log::info!("Start subscription for subscription_token_owner_account_service ...");
 
         return Ok(datasource_cancellation_token.clone());
 
@@ -165,45 +176,19 @@ impl SubscriptionTokenAccountService {
 
 }
 
-pub struct GenericAccount {
-    state: bool
-}
-
-pub struct GenericAccountDecoder;
-
-impl AccountDecoder<'_> for GenericAccountDecoder {
-    type AccountType = GenericAccount;
-    fn decode_account(
-        &self,
-        account: &solana_account::Account,
-    ) -> Option<carbon_core::account::DecodedAccount<Self::AccountType>> {
-        return Some(carbon_core::account::DecodedAccount {
-                lamports: account.lamports,
-                data: GenericAccount { state: true },
-                owner: account.owner,
-                executable: account.executable,
-                rent_epoch: account.rent_epoch,
-            });
-    }
-}
-
-pub struct GenericAccountProcessor;
+pub struct GenericAccountDeletionProcessor;
 #[async_trait]
-impl Processor for GenericAccountProcessor {
-    type InputType = (
-        AccountMetadata,
-        DecodedAccount<GenericAccount>,
-        solana_account::Account
-    );
+impl Processor for GenericAccountDeletionProcessor {
+    type InputType = carbon_core::datasource::AccountDeletion;
 
     async fn process(
         &mut self,
-        (metadata, decoded_account, account): Self::InputType,
+        account: Self::InputType,
         _metrics: Arc<MetricsCollection>,
     ) -> CarbonResult<()> {
 
         let arc_state = solana_state::get_solana_state();
-        arc_state.handle_account_update(metadata.pubkey.clone(), account);
+        arc_state.clean_zero_account(account.pubkey);
 
         Ok(())
     }

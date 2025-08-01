@@ -19,7 +19,7 @@ use static_init::dynamic;
 
 use chrono::Utc;
 
-use crate::utils::helpers::load_env_vars;
+use crate::{services::subscription_deletion_service::SubscriptionDeletionService, utils::helpers::load_env_vars};
 
 #[dynamic] 
 static SOLANA_STATE_ENCAPSULATOR: Arc<SolanaStateManager> = Arc::new(SolanaStateManager::new());
@@ -228,6 +228,7 @@ impl SolanaStateManager
             });
         } else {
             self.state_account.insert(pub_key, acc.clone());
+            SubscriptionDeletionService::check_and_restart_deletion_sub();
         }
 
         let owner_key = &acc.clone().owner;

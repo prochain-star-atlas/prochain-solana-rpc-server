@@ -22,11 +22,11 @@ use chrono::Utc;
 use crate::utils::helpers::load_env_vars;
 
 #[dynamic] 
-static SOLANA_STATE_ENCAPSULATOR: Mutex<Arc<SolanaStateManager>> = Mutex::new(Arc::new(SolanaStateManager::new()));
+static SOLANA_STATE_ENCAPSULATOR: Arc<SolanaStateManager> = Arc::new(SolanaStateManager::new());
 
 pub fn get_solana_state() -> Arc<SolanaStateManager> {
-    let state = SOLANA_STATE_ENCAPSULATOR.lock();
-    return state.clone();
+    let state = SOLANA_STATE_ENCAPSULATOR.clone();
+    return state;
 }
 
 impl Eq for ProchainAccountInfo {}

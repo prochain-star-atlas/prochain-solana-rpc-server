@@ -2,28 +2,27 @@ pub mod error;
 
 use dashmap::DashMap;
 use log::info;
-use rayon::vec;
+use solana_account::Account;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 use utoipa::ToSchema;
 use yellowstone_grpc_proto::geyser::SubscribeUpdateAccountInfo;
 use core::str;
+use parking_lot::{Mutex};
 use std::{
-    str::FromStr, sync::Arc, time::Duration
+    env, str::FromStr, sync::Arc, time::Duration
 };
 use solana_sdk::{
     account::ReadableAccount, clock::Epoch
 };
+use static_init::dynamic;
 
 use chrono::Utc;
 
-extern crate lazy_static;
-use lazy_static::lazy_static;
-use parking_lot::Mutex;
+use crate::utils::helpers::load_env_vars;
 
-lazy_static! {
-    static ref SOLANA_STATE_ENCAPSULATOR: Mutex<Arc<SolanaStateManager>> = Mutex::new(Arc::new(SolanaStateManager::new()));
-}
+#[dynamic] 
+static SOLANA_STATE_ENCAPSULATOR: Mutex<Arc<SolanaStateManager>> = Mutex::new(Arc::new(SolanaStateManager::new()));
 
 pub fn get_solana_state() -> Arc<SolanaStateManager> {
     let state = SOLANA_STATE_ENCAPSULATOR.lock();
@@ -104,6 +103,12 @@ pub struct SolanaStateManager {
 impl SolanaStateManager
 {
     pub fn new() -> Self {
+
+        let path = env::current_dir().unwrap();
+        let _res = load_env_vars(&path);
+
+        let sol_rpc_url = std::env::var("SOL_RPC_URL").unwrap();
+
         let state_a: DashMap<Pubkey, ProchainAccountInfo> = DashMap::new();
         let state_o: DashMap<Pubkey, Vec<Pubkey>> = DashMap::new();
         let state_p: DashMap<Pubkey, Vec<Pubkey>> = DashMap::new();
@@ -122,7 +127,7 @@ impl SolanaStateManager
             slot: Arc::new(slot_a),
             blockhash: Arc::new(blockhash_b),
             blockheight: Arc::new(blockheight_b),
-            sol_client: Arc::new(solana_client::nonblocking::rpc_client::RpcClient::new_with_timeout_and_commitment(String::from_str("http://192.168.100.98:18899").unwrap(), Duration::from_secs(240), CommitmentConfig::confirmed()))
+            sol_client: Arc::new(solana_client::nonblocking::rpc_client::RpcClient::new_with_timeout_and_commitment(sol_rpc_url, Duration::from_secs(240), CommitmentConfig::confirmed()))
         }
     }
 
@@ -286,52 +291,45 @@ impl SolanaStateManager
 
     }
 
-    pub fn handle_account_update(&self, ua: SubscribeUpdateAccountInfo) {
-
-        let c: &[u8] = &ua.pubkey;
-        let pub_key = Pubkey::try_from(c).unwrap();
-
-        //log::info!("updating account: {}", pub_key);
-
-        let owner_key = Pubkey::try_from(ua.owner).unwrap();
+    pub fn handle_account_update(&self, pubkey: Pubkey, account: Account) {
 
         let tt = ProchainAccountInfo {
-            pubkey: pub_key,
-            lamports: ua.lamports,
-            executable: ua.executable,
-            owner: owner_key.clone(),
-            rent_epoch: ua.rent_epoch,
+            pubkey: pubkey.clone(),
+            lamports: account.lamports,
+            executable: account.executable,
+            owner: account.owner.clone(),
+            rent_epoch: account.rent_epoch,
             slot: 0,
-            write_version: ua.write_version,
-            txn_signature: ua.txn_signature,
-            data: ua.data,
+            write_version: 0,
+            txn_signature: None,
+            data: account.data,
             last_update: chrono::offset::Utc::now()
         };
 
         if tt.lamports == 0 {
-            self.clean_zero_account(pub_key);
+            self.clean_zero_account(pubkey.clone());
         } else {
-            if self.state_account.contains_key(&pub_key) {
-                self.state_account.alter(&pub_key, |k, v| {
+            if self.state_account.contains_key(&pubkey.clone()) {
+                self.state_account.alter(&pubkey.clone(), |k, v| {
                     return tt;
                 });
             } else {
-                self.state_account.insert(pub_key, tt);
+                self.state_account.insert(pubkey.clone(), tt);
             }
     
-            if self.state_owner.contains_key(&owner_key.clone()) {
+            if self.state_owner.contains_key(&account.owner.clone()) {
     
-                self.state_owner.alter(&owner_key, |k, mut v| {
-                    if !v.contains(&pub_key) {
-                        v.push(pub_key);
+                self.state_owner.alter(&account.owner.clone(), |k, mut v| {
+                    if !v.contains(&pubkey.clone()) {
+                        v.push(pubkey.clone());
                     }
                     return v;
                 });
     
             } else {
                 let mut vd: Vec<Pubkey> = vec![];
-                vd.push(pub_key);
-                self.state_owner.insert(owner_key.clone(), vd);
+                vd.push(pubkey.clone());
+                self.state_owner.insert(account.owner.clone(), vd);
             }
         }
 

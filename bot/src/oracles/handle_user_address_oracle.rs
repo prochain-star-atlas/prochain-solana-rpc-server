@@ -4,7 +4,7 @@ use parking_lot::Mutex;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_request::TokenAccountsFilter;
 use solana_sdk::pubkey::Pubkey;
-use crate::solana_state::{ProchainAccountInfo, SolanaStateManager};
+use crate::{services::subscription_account_service::SubscriptionAccountService, solana_state::{ProchainAccountInfo, SolanaStateManager}};
 use std::sync::Arc;
 
 pub async fn add_user_address_to_index_with_all_child_with_sub(addr: Pubkey, state: Arc<SolanaStateManager>, sol_client: Arc<RpcClient>) {
@@ -62,11 +62,11 @@ pub async fn add_user_address_to_index_with_all_child_with_sub(addr: Pubkey, sta
             
         }
 
-        let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
+        let mut vec_acc = crate::services::subscription_account_service::get_mutex_account_sub(String::from("sage"));
         vec_acc.append(&mut vec_acc_new);
         let v: Vec<_> = vec_acc.into_iter().unique().collect();
-        crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), v);
-        crate::oracles::create_subscription_oracle::refresh();
+        crate::services::subscription_account_service::set_mutex_account_sub(String::from("sage"), v);
+        let _1 = SubscriptionAccountService::restart().await;
 
     }
 
@@ -99,11 +99,11 @@ pub async fn add_user_address_to_index_with_sub(addr: Pubkey, state: Arc<SolanaS
 
         state.add_account_info(addr.clone(), tt);
 
-        let mut vec_acc = crate::oracles::create_subscription_oracle::get_mutex_account_sub(String::from("sage"));
+        let mut vec_acc = crate::services::subscription_account_service::get_mutex_account_sub(String::from("sage"));
         vec_acc.push(addr.to_string());
         let v: Vec<_> = vec_acc.into_iter().unique().collect();
-        crate::oracles::create_subscription_oracle::set_mutex_account_sub(String::from("sage"), v);
-        crate::oracles::create_subscription_oracle::refresh();
+        crate::services::subscription_account_service::set_mutex_account_sub(String::from("sage"), v);
+        let _1 = SubscriptionAccountService::restart().await;
 
     }
 

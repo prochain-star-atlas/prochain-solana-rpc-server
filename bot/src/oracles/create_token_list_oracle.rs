@@ -57,7 +57,7 @@ pub async fn create_token_list(state: Arc<SolanaStateManager>, sol_client: Arc<R
     
         }
     
-        crate::oracles::create_subscription_oracle::set_mutex_token_sub(String::from("sage"), vec_pk.clone());
+        crate::services::subscription_token_account_service::set_mutex_token_sub(String::from("sage"), vec_pk.clone());
 
         log::info!("initialized star atlas tokens: {}", vec_pk.clone().len());
     }

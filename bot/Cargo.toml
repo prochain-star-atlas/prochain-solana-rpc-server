@@ -11,7 +11,10 @@ time = { workspace = true }
 rayon = { workspace = true }
 itertools = { workspace = true }
 arraydeque = { workspace = true }
+
 tokio = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true }
+
 log = { workspace = true }
 url = { workspace = true }
 async-trait = { workspace = true }
@@ -27,12 +30,11 @@ eyre = { workspace = true }
 hashbrown = { workspace = true }
 serde = { workspace = true, features = ["derive", "rc"] }
 serde_json = { workspace = true, features = ["alloc"] }
-bigdecimal = { workspace = true }
-lazy_static = { workspace = true }
+
 reqwest = { workspace = true, features = ["json"] }
 dashmap = { workspace = true, features = ["serde"] }
 tracing = { workspace = true }
-signalrs-client = { workspace = true }
+
 thiserror = { workspace = true }
 num-bigfloat = { workspace = true }
 blst = { workspace = true }
@@ -46,12 +48,16 @@ bincode = { workspace = true }
 solana-sdk = { workspace = true }
 solana-transaction-status = { workspace = true }
 solana-client = { workspace = true }
+solana-account = { workspace = true }
 solana-account-decoder = { workspace = true }
-solana-perf = { workspace = true }
-solana-runtime = { workspace = true }
 spl-token = { workspace = true, features = ["no-entrypoint"] }
-solana-inline-spl = { workspace = true }
 spl-token-2022 = { workspace = true }
+solana-pubkey = { workspace = true }
+solana-signature = { workspace = true }
+solana-program = { workspace = true }
+
+dotenvy = { workspace = true }
+dotenv = { workspace = true }
 
 zstd = { workspace = true }
 
@@ -69,20 +75,25 @@ rust_decimal_macros = { workspace = true }
 
 futures-util = { workspace = true }
 
-binance-rs-async = { workspace = true, features = [ "wallet_api" ] }
-
 parking_lot = { workspace = true }
 
 clap = { workspace = true, features = ["derive"] }
 
+solana-perf = { workspace = true }
+solana-inline-spl = { workspace = true }
+
+carbon-core = { workspace = true }
+carbon-system-program-decoder = { workspace = true }
+carbon-token-2022-decoder = { workspace = true }
+carbon-token-program-decoder = { workspace = true }
+carbon-associated-token-account-decoder = { workspace = true }
+carbon-yellowstone-grpc-datasource = { workspace = true }
+
 yellowstone-grpc-client = { workspace = true }
 yellowstone-grpc-proto = { workspace = true, default-features = true }
 
-jsonrpc-core = { workspace = true }
-jsonrpc-core-client = { workspace = true }
-jsonrpc-derive = { workspace = true }
-jsonrpc-http-server = { workspace = true }
-jsonrpc-server-utils = { workspace = true }
+rustls-webpki = { workspace = true }
+jsonrpsee = { workspace = true, features = ["full"] }
 
 base64 = { workspace = true }
 bb8 = { workspace = true }
@@ -95,9 +106,13 @@ axum.workspace = true
 tracing-subscriber.workspace = true
 rmpv.workspace = true
 
+async_once = { workspace = true }
+static_init = { workspace = true }
+
 actix = { workspace = true }
 actix-web = { workspace = true }
 env_logger = { workspace = true }
+
 utoipa = { workspace = true, features = ["actix_extras", "chrono"] }
 utoipa-swagger-ui = { workspace = true }
 utoipa-scalar = { workspace = true }

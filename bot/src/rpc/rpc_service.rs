@@ -1,121 +1,116 @@
-use {
-    crate::{rpc::{request_processor::JsonRpcRequestProcessor, rpc::{
-            rpc_accounts::{self, *},
-            MAX_REQUEST_PAYLOAD_SIZE,
-        }}, solana_state::SolanaStateManager}, jsonrpc_core::MetaIoHandler, jsonrpc_http_server::{
-        hyper, AccessControlAllowOrigin, DomainsValidation, RequestMiddleware,
-        RequestMiddlewareAction, ServerBuilder,
-    }, log::*, solana_client::nonblocking::rpc_client::RpcClient, solana_perf::thread::renice_this_thread, std::{
-        net::SocketAddr, sync::Arc, thread::{self, Builder, JoinHandle}
-    }
+
+use std::net::SocketAddr;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+use futures::FutureExt;
+use jsonrpsee::core::async_trait;
+use jsonrpsee::core::middleware::{Batch, BatchEntry, BatchEntryErr, Notification, RpcServiceBuilder, RpcServiceT};
+use jsonrpsee::http_client::HttpClient;
+use jsonrpsee::proc_macros::rpc;
+use jsonrpsee::server::middleware::http::{HostFilterLayer, ProxyGetRequestLayer};
+use jsonrpsee::server::{
+	ServerConfig, ServerHandle, StopHandle, TowerServiceBuilder, serve_with_graceful_shutdown, stop_channel,
 };
+use jsonrpsee::types::{ErrorObject, ErrorObjectOwned, Request};
+use jsonrpsee::ws_client::{HeaderValue, WsClientBuilder};
+use jsonrpsee::{MethodResponse, Methods};
+use tokio::net::TcpListener;
+use tower::Service;
+use tower_http::cors::CorsLayer;
+use tracing_subscriber::util::SubscriberInitExt;
 
-pub struct JsonRpcService {
-    thread_hdl: JoinHandle<()>,
+use crate::rpc::rpc::{RpcServer, RpcServerImpl};
+
+#[derive(Default, Clone, Debug)]
+pub struct Metrics {
+	opened_ws_connections: Arc<AtomicUsize>,
+	closed_ws_connections: Arc<AtomicUsize>,
+	http_calls: Arc<AtomicUsize>,
+	success_http_calls: Arc<AtomicUsize>,
 }
 
-#[derive(Debug, Default, Clone)]
-pub struct JsonRpcConfig {
-    pub max_multiple_accounts: Option<usize>,
-    pub rpc_threads: usize,
-    pub rpc_niceness_adj: i8,
-}
-struct RpcRequestMiddleware;
+pub async fn run_server(metrics: Metrics) -> anyhow::Result<ServerHandle> {
+	let listener = TcpListener::bind(SocketAddr::from(([0, 0, 0, 0], 14555))).await?;
 
-impl RpcRequestMiddleware {
+	// This state is cloned for every connection
+	// all these types based on Arcs and it should
+	// be relatively cheap to clone them.
+	//
+	// Make sure that nothing expensive is cloned here
+	// when doing this or use an `Arc`.
+	#[derive(Clone)]
+	struct PerConnection<RpcMiddleware, HttpMiddleware> {
+		methods: Methods,
+		stop_handle: StopHandle,
+		metrics: Metrics,
+		svc_builder: TowerServiceBuilder<RpcMiddleware, HttpMiddleware>,
+	}
 
-    async fn body_to_string(req: &mut hyper::Body) -> Result<String, anyhow::Error> {
-        let body_bytes = hyper::body::to_bytes(req).await?;
-        Ok(String::from_utf8(body_bytes.to_vec()).unwrap())
-    }
+	// Each RPC call/connection get its own `stop_handle`
+	// to able to determine whether the server has been stopped or not.
+	//
+	// To keep the server running the `server_handle`
+	// must be kept and it can also be used to stop the server.
+	let (stop_handle, server_handle) = stop_channel();
 
-    fn new() -> Self {
-        Self {}
-    }
-}
+	let per_conn = PerConnection {
+		methods: RpcServerImpl.into_rpc().into(),
+		stop_handle: stop_handle.clone(),
+		metrics,
+		svc_builder: jsonrpsee::server::Server::builder()
+			.set_config(ServerConfig::builder().max_connections(100).build())
+			.set_http_middleware(
+				tower::ServiceBuilder::new()
+					.layer(CorsLayer::permissive())
+			)
+			.to_service_builder(),
+	};
 
-impl RequestMiddleware for RpcRequestMiddleware {
-    fn on_request(&self, request: hyper::Request<hyper::Body>) -> RequestMiddlewareAction {
+	tokio::spawn(async move {
+		loop {
+			// The `tokio::select!` macro is used to wait for either of the
+			// listeners to accept a new connection or for the server to be
+			// stopped.
+			let sock = tokio::select! {
+				res = listener.accept() => {
+					match res {
+						Ok((stream, _remote_addr)) => stream,
+						Err(e) => {
+							tracing::error!("failed to accept v4 connection: {:?}", e);
+							continue;
+						}
+					}
+				}
+				_ = per_conn.stop_handle.clone().shutdown() => break,
+			};
+			let per_conn2 = per_conn.clone();
 
-        let (parts, body) = request.into_parts();
-        
-        /*
-        tokio::spawn(async move {
-            let br = RpcRequestMiddleware::body_to_string(&mut body).await.unwrap();
-            info!("request method: {} body: {}", bd, br);
-        });
-        */
+			let svc = tower::service_fn(move |req| {
 
-        let br = hyper::Request::from_parts(parts, body);
-        let res = RequestMiddlewareAction::from(br);
-        return res;
+				let PerConnection { methods, stop_handle, metrics, svc_builder } = per_conn2.clone();
 
-    }
-}
+				let mut svc = svc_builder.build(methods, stop_handle);
 
-impl JsonRpcService {
-    pub fn new(
-        rpc_addr: SocketAddr,
-        config: JsonRpcConfig,
-        state: Arc<SolanaStateManager>,
-        sol_client: Arc<RpcClient>
-    ) -> Self {
-        info!("rpc bound to {:?}", rpc_addr);
-        let rpc_threads = 1.max(config.rpc_threads);
-        let rpc_niceness_adj = config.rpc_niceness_adj;
+                // HTTP.
+                async move {
+                    tracing::info!("Opened HTTP connection");
+                    metrics.http_calls.fetch_add(1, Ordering::Relaxed);
+                    let rp = svc.call(req).await;
 
-        let runtime = Arc::new(
-            tokio::runtime::Builder::new_multi_thread()
-                .worker_threads(rpc_threads)
-                .on_thread_start(move || renice_this_thread(rpc_niceness_adj).unwrap())
-                .thread_name("sol-rpc-el")
-                .enable_all()
-                .build()
-                .expect("Runtime"),
-        );
+                    if rp.is_ok() {
+                        metrics.success_http_calls.fetch_add(1, Ordering::Relaxed);
+                    }
 
-        let request_processor = JsonRpcRequestProcessor::new(config, sol_client, state);
-
-        let thread_hdl = Builder::new()
-            .name("solana-jsonrpc".to_string())
-            .spawn(move || {
-                renice_this_thread(rpc_niceness_adj).unwrap();
-                let mut io = MetaIoHandler::default();
-                io.extend_with(rpc_accounts::AccountsDataImpl.to_delegate());
-                let request_middleware = RpcRequestMiddleware::new();
-
-                let server = ServerBuilder::with_meta_extractor(
-                    io,
-                    move |_req: &hyper::Request<hyper::Body>| request_processor.clone(),
-                )
-                .event_loop_executor(runtime.handle().clone())
-                .threads(1)
-                .cors(DomainsValidation::AllowOnly(vec![
-                    AccessControlAllowOrigin::Any,
-                ]))
-                .cors_max_age(86400)
-                .request_middleware(request_middleware)
-                .max_request_body_size(MAX_REQUEST_PAYLOAD_SIZE)
-                .start_http(&rpc_addr);
-
-                if let Err(e) = server {
-                    warn!(
-                        "JSON RPC service unavailable error: {:?}. \n\
-                           Also, check that port {} is not already in use by another application",
-                        e,
-                        rpc_addr.port()
-                    );
-                    return;
+                    tracing::info!("Closed HTTP connection");
+                    rp
                 }
-                let server = server.unwrap();
-                server.wait();
-            })
-            .unwrap();
+                .boxed()
+			});
 
-        Self { thread_hdl }
-    }
+			tokio::spawn(serve_with_graceful_shutdown(sock, svc, stop_handle.clone().shutdown()));
+		}
+	});
 
-    pub fn join(self) -> thread::Result<()> {
-        self.thread_hdl.join()
-    }
+	Ok(server_handle)
 }
